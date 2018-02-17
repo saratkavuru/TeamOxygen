@@ -118,7 +118,7 @@
         update_cache: yes
     
     - include_vars:
-        file: dns.json
+        file: dns.yml
 
     - name: Get the jenkins-cli jarfile from the Jenkins server.
       get_url:

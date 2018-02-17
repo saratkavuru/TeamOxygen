@@ -53,7 +53,7 @@ ec2.runInstances(params, function(err,data){
                     var dns = data.Reservations[0].Instances[0].PublicDnsName;
                     console.log("IP Address:", ip);
                     console.log("Public DNS:", dns);
-                    fs.appendFile("dns.json",ServerName+"Dns: "+ dns +"\n" ,(err)=>{
+                    fs.appendFile("dns.yml",ServerName+"Dns: "+ dns +"\n" ,(err)=>{
                         if (err) throw err;
                         console.log("DNS added to JSON");
                     });

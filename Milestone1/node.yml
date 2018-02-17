@@ -31,7 +31,7 @@
        state: absent
      with_items:
        - inventory
-       - dns.json
+       - dns.yml
 
    -  name: Run aws.js for Jenkins
       command: nodejs aws.js Jenkins
