@@ -1,5 +1,11 @@
+if (process.argv.length != 3) {
+    console.log("Usage: nodejs " + __filename + " ServerName");
+    process.exit(-1);
+}
+
 var AWS = require('aws-sdk');
 var fs = require('fs');
+var ServerName = process.argv[2];
 
 AWS.config.update({
     accessKeyId: process.env.AWSAccessKeyId,
@@ -45,7 +51,7 @@ ec2.runInstances(params, function(err,data){
                     console.log(data.Reservations[0].Instances);
                     var ip = data.Reservations[0].Instances[0].PublicIpAddress;
                     console.log("IP Address:", ip);
-                    fs.appendFile("inventory","[Jenkins]\n"+ ip + ' ansible_ssh_user=ec2-user ' + 'ansible_ssh_private_key_file=DevOps.pem\n',(err)=>{
+                    fs.appendFile("inventory","["+ServerName+"]"+ "\n" + ip + ' ansible_ssh_user=ec2-user ' + 'ansible_ssh_private_key_file=DevOps.pem\n',(err)=>{
                         if (err) throw err;
                         console.log("Jenkins added to inventory");
                     });
