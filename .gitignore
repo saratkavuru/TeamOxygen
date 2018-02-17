@@ -5,3 +5,4 @@ node_modules
 *.retry
 Milestone1/inventory
 *.pem
+Milestone1/dns.json
