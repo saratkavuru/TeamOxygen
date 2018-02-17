@@ -3,5 +3,74 @@
 - hosts: Jenkins
   become: yes
   
+  vars:
+    - jenkins_repo_url: deb https://pkg.jenkins.io/debian binary/
+    - jenkins_repo_key_url: https://pkg.jenkins.io/debian/jenkins.io.key
+    - jenkins_pkg_url: https://pkg.jenkins.io/debian/binary
+    - jenkins_init_file: /etc/default/jenkins
+    - jenkins_http_port_param: HTTP_PORT
+    - jenkins_java_options_env_var: JAVA_ARGS
+    - jenkins_version: 2.60
+    - jenkins_package_state: present
+  
   tasks:
+    - name: Install add-apt-repostory
+      apt: name=software-properties-common state=latest
+
+    - name: Add Oracle Java Repository
+      apt_repository: repo='ppa:webupd8team/java'
+
+    - name: Accept Java 8 License
+      debconf: name='oracle-java8-installer' question='shared/accepted-oracle-license-v1-1' value='true' vtype='select'
+
+    - name: install dependencies
+      apt:
+        pkg: "{{ item }}"
+        state: installed
+        update_cache: true
+        cache_valid_time: 500000
+      with_items:
+        - git
+        - oracle-java8-installer
+        - ca-certificates
+        - oracle-java8-set-default
+        - curl
+        - apt-transport-https
+
+    - name: Add Jenkins apt repository key.
+      apt_key:
+        url: "{{ jenkins_repo_key_url }}"
+        state: present
+
+    - name: Add Jenkins apt repository.
+      apt_repository:
+        repo: "{{ jenkins_repo_url }}"
+        state: present
+        update_cache: yes
+      when: jenkins_repo_url != ''
+
+    - name: Download specific Jenkins version.
+      get_url:
+        url: "{{ jenkins_pkg_url }}/jenkins_{{ jenkins_version }}_all.deb"
+        dest: "/tmp/jenkins_{{ jenkins_version }}_all.deb"
+      when: jenkins_version is defined
+
+    - name: Check if we downloaded a specific version of Jenkins.
+      stat:
+        path: "/tmp/jenkins_{{ jenkins_version }}_all.deb"
+      register: specific_version
+      when: jenkins_version is defined
+
+    - name: Install our specific version of Jenkins.
+      apt:
+        deb: "/tmp/jenkins_{{ jenkins_version }}_all.deb"
+        state: installed
+      when: jenkins_version is defined and specific_version.stat.exists
+      # notify: configure default users
+
+    - name: Ensure Jenkins is installed.
+      apt:
+        name: jenkins
+        state: "{{ jenkins_package_state }}"
+      # notify: configure default users
 ...
