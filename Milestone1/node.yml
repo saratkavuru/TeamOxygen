@@ -24,7 +24,6 @@
      args:
        chdir: /home/vagrant/Project/Milestone1
 
-   
    -  name: Run aws.js
       command: nodejs aws.js
       args:
