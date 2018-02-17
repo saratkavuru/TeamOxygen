@@ -18,6 +18,7 @@
    - name: Include vars from the vault
      include_vars:
        file: creds.yml
+     no_log: true
    
    - name: Install the dependencies for aws.js
      command: npm install
