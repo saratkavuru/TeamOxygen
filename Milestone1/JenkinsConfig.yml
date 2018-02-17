@@ -95,27 +95,27 @@
        - nodejs
        - npm
     
-    - name: Add Maven repository 
-      apt_repository:
-        repo: 'ppa:andrei-pozolotin/maven3'
-        state: present
-        update_cache: yes    
+    # - name: Add Maven repository 
+    #   apt_repository:
+    #     repo: 'ppa:andrei-pozolotin/maven3'
+    #     state: present
+    #     update_cache: yes    
 
-    - name: Purge existing Maven configuration files
-      apt:
-        name: "{{ item }}"
-        purge: yes
-        update_cache: yes
-      with_items:
-        - maven
-        - maven2
-        - maven3
+    # - name: Purge existing Maven configuration files
+    #   apt:
+    #     name: "{{ item }}"
+    #     purge: yes
+    #     update_cache: yes
+    #   with_items:
+    #     - maven
+    #     - maven2
+    #     - maven3
    
-    - name: Install maven3
-      apt:
-        name: maven3
-        state: latest
-        update_cache: yes
+    # - name: Install maven3
+    #   apt:
+    #     name: maven3
+    #     state: latest
+    #     update_cache: yes
     
     - include_vars:
         file: dns.yml
@@ -129,6 +129,11 @@
       retries: 5
       delay: 10
       check_mode: no
+
+    - name: Copy checkbox build file to jenkins server
+      copy:
+        src: ./CheckBoxBuild.yml
+        dest: /home/ubuntu/CheckBoxBuild.yml
 
   handlers: 
       - name: configure default users
