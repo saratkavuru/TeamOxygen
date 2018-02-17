@@ -1,4 +1,6 @@
 ---
+# https://tecadmin.net/install-jenkins-in-ubuntu/
+# https://github.com/geerlingguy/ansible-role-jenkins/blob/master/handlers/main.yml
 # ansible-playbook JenkinsConfig.yml -i inventory -vvv
 - hosts: Jenkins
   become: yes
