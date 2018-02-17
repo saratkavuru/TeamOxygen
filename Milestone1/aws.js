@@ -17,7 +17,7 @@ var ec2 = new AWS.EC2({apiVersion: '2016-11-15'});
 
 var params = 
 {
-    ImageId : "ami-66506c1c",
+    ImageId : "ami-a22323d8",
     InstanceType : "t2.micro",
     MinCount : 1,
     MaxCount : 1,
@@ -51,7 +51,7 @@ ec2.runInstances(params, function(err,data){
                     console.log(data.Reservations[0].Instances);
                     var ip = data.Reservations[0].Instances[0].PublicIpAddress;
                     console.log("IP Address:", ip);
-                    fs.appendFile("inventory","["+ServerName+"]"+ "\n" + ip + ' ansible_ssh_user=ec2-user ' + 'ansible_ssh_private_key_file=DevOps.pem\n',(err)=>{
+                    fs.appendFile("inventory","["+ServerName+"]"+ "\n" + ip + ' ansible_ssh_user=ubuntu ' + 'ansible_ssh_private_key_file=DevOps.pem\n',(err)=>{
                         if (err) throw err;
                         console.log("Jenkins added to inventory");
                     });

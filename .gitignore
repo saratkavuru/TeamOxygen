@@ -3,6 +3,5 @@
 creds.yml
 node_modules
 *.retry
-Milestone1/DevOps.pem
 Milestone1/inventory
 *.pem

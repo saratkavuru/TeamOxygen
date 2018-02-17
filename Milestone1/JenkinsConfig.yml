@@ -1,0 +1,7 @@
+---
+# ansible-playbook JenkinsConfig.yml -i inventory -vvv
+- hosts: Jenkins
+  become: yes
+  
+  tasks:
+...
