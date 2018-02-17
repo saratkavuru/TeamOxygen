@@ -50,7 +50,13 @@ ec2.runInstances(params, function(err,data){
                     //Grab the IP address in this callback.
                     console.log(data.Reservations[0].Instances);
                     var ip = data.Reservations[0].Instances[0].PublicIpAddress;
+                    var dns = data.Reservations[0].Instances[0].PublicDnsName;
                     console.log("IP Address:", ip);
+                    console.log("Public DNS:", dns);
+                    fs.appendFile("dns.json",ServerName+"Dns: "+ dns +"\n" ,(err)=>{
+                        if (err) throw err;
+                        console.log("DNS added to JSON");
+                    });
                     fs.appendFile("inventory","["+ServerName+"]"+ "\n" + ip + ' ansible_ssh_user=ubuntu ' + 'ansible_ssh_private_key_file=DevOps.pem\n',(err)=>{
                         if (err) throw err;
                         console.log("Jenkins added to inventory");

@@ -25,10 +25,13 @@
      args:
        chdir: /home/vagrant/Project/Milestone1
 
-   - name: Delete inventory file
+   - name: Delete inventory and dns.json file
      file: 
-       path: inventory
+       path: "{{ item }}"
        state: absent
+     with_items:
+       - inventory
+       - dns.json
 
    -  name: Run aws.js for Jenkins
       command: nodejs aws.js Jenkins

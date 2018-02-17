@@ -81,4 +81,48 @@
       pip:
         name: 
           - jenkins-job-builder
+
+    - name: Restart jenkins when user changes.
+      service: name=jenkins state=restarted
+    
+    - name: Install nodejs and npm
+      apt:
+        pkg: "{{ item }}"
+        state: installed
+        update_cache: true
+      with_items:
+       - nodejs
+       - npm
+    
+    - name: Add Maven repository 
+      apt_repository:
+        repo: 'ppa:andrei-pozolotin/maven3'
+        state: present
+        update_cache: yes    
+
+    - name: Purge existing Maven configuration files
+      apt:
+        name: "{{ item }}"
+        purge: yes
+        update_cache: yes
+      with_items:
+        - maven
+        - maven2
+        - maven3
+   
+    - name: Install maven3
+      apt:
+        name: maven3
+        state: latest
+        update_cache: yes
+
+  handlers: 
+      - name: configure default users
+        template:
+          src: basic-security.groovy
+          dest: "{{ jenkins_home }}/init.groovy.d/basic-security.groovy"
+          owner: "{{ jenkins_process_user }}"
+          group: "{{ jenkins_process_group }}"
+          mode: 0775
+
 ...
