@@ -1,2 +1,6 @@
 *.log
 .vagrant
+creds.yml
+node_modules
+*.retry
+

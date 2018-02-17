@@ -1,0 +1,36 @@
+---
+
+# ansible-playbook --ask-vault-pass node.yml -v
+
+- hosts: localhost
+  become: yes
+
+  tasks: 
+   - name: Install nodejs and npm
+     apt:
+       pkg: "{{ item }}"
+       state: installed
+       update_cache: true
+     with_items:
+       - nodejs
+       - npm
+   
+   - name: Include vars from the vault
+     include_vars:
+       file: creds.yml
+   
+   - name: Install the dependencies for digitalocean.js and aws.js
+     command: npm install
+     args:
+       chdir: /home/vagrant/Project/Milestone1
+
+   
+   -  name: Run aws.js
+      command: nodejs aws.js
+      args:
+        chdir:  /home/vagrant/Project/Milestone1
+      environment:
+        AWSAccessKeyId : "{{ AWSAccessKeyId }}"
+        AWSSecretKey : "{{ AWSSecretKey }}"  
+
+...     
