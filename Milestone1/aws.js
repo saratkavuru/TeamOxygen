@@ -63,7 +63,7 @@ ec2.runInstances(params, function(err,data){
                     });
                 }
             });
-        },15000);
+        },25000);
     }
 });
 

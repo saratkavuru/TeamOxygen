@@ -150,6 +150,9 @@
     - name: jenkins job builder configuration
       action: template src="./jenkins_jobs.ini" dest="/home/ubuntu/jenkins_jobs.ini" owner=root group=root mode=0600
     
+    - name: Run jenkins build for checkbox
+      command: jenkins-jobs --conf /home/ubuntu/jenkins_jobs.ini update /home/ubuntu/CheckBoxBuild.yml
+      
     # - debug:
     #     msg: "{{ admin_password }}"
 

@@ -2,6 +2,14 @@
     name: checkbox
     project-type: freestyle
     description: 'A basic example of a `jjb` job that echos "Hello world and cats out /etc/password"'
+    retry-count: 3
+    scm:
+      - git:
+          url: 'https://github.com/chrisparnin/checkbox.io'
+          name: 'checkbox'
+          branches:
+            - origin/master
     builders:
         - shell: |
-            echo 'Hello world!'
+            cd /home/ubuntu/checkbox.io/server-side/site
+            npm install
