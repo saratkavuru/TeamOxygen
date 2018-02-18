@@ -1,3 +1,7 @@
-job:
-  name: checkbox
-  project-type: freestyle
+- job:
+    name: checkbox
+    project-type: freestyle
+    description: 'A basic example of a `jjb` job that echos "Hello world and cats out /etc/password"'
+    builders:
+        - shell: |
+            echo 'Hello world!'

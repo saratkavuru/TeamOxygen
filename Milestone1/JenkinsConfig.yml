@@ -1,7 +1,12 @@
 ---
+# Ref:
+#
 # https://tecadmin.net/install-jenkins-in-ubuntu/
 # https://github.com/geerlingguy/ansible-role-jenkins/blob/master/handlers/main.yml
+# https://jjasghar.github.io/blog/2016/01/03/getting-jenkins-and-jenkins-job-builder-running/
+#
 # ansible-playbook JenkinsConfig.yml -i inventory -vvv
+
 - hosts: Jenkins
   become: yes
   
@@ -134,6 +139,19 @@
       copy:
         src: ./CheckBoxBuild.yml
         dest: /home/ubuntu/CheckBoxBuild.yml
+    
+    - action: command cat /var/lib/jenkins/secrets/initialAdminPassword
+      register: out
+      changed_when: "'z' in out.stdout"
+
+    - set_fact:
+        admin_password: "{{ out.stdout_lines[0] }}"
+
+    - name: jenkins job builder configuration
+      action: template src="./jenkins_jobs.ini" dest="/home/ubuntu/jenkins_jobs.ini" owner=root group=root mode=0600
+    
+    # - debug:
+    #     msg: "{{ admin_password }}"
 
   handlers: 
       - name: configure default users
