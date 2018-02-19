@@ -57,7 +57,7 @@ ec2.runInstances(params, function(err,data){
                         if (err) throw err;
                         console.log("DNS added to JSON");
                     });
-                    fs.appendFile("inventory","["+ServerName+"]"+ "\n" + ip + ' ansible_ssh_user=ubuntu ' + 'ansible_ssh_private_key_file=DevOps.pem\n',(err)=>{
+                    fs.appendFile("inventory","["+ServerName+"]"+ "\n" + ip + ' ansible_ssh_user=ubuntu ' + 'ansible_ssh_private_key_file=DevOps.pem '+'ansible_ssh_common_args=\'-o StrictHostKeyChecking=no\'\n\n',(err)=>{
                         if (err) throw err;
                         console.log("Jenkins added to inventory");
                     });
