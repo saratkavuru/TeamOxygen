@@ -162,6 +162,35 @@
         src: ./config.xml
         dest: /var/lib/jenkins/config.xml
 
+    # - name: create .ssh
+    #   file: path=/var/lib/jenkins/.ssh state=directory
+
+    # - name: Generate SSH keys
+    #   shell: ssh-keygen -b 2048 -t rsa -f /var/lib/jenkins/.ssh/id_rsa -q -N ""
+    #   args:
+    #     creates: /var/lib/jenkins/.ssh/id_rsa
+
+    # - name: set permissions for keys
+    #   shell: chown jenkins:jenkins id_rsa
+    #   args:
+    #     chdir: /var/lib/jenkins/.ssh        
+
+    # - name: Get Jenkins crumb
+    #   uri:
+    #     user: admin
+    #     password: "{{ admin_password }}"
+    #     force_basic_auth: yes
+    #     url: "http://127.0.0.1:8080/crumbIssuer/api/json"
+    #     return_content: yes
+    #   register: jenkins_crumb
+    #   until: jenkins_crumb.content.find('Please wait while Jenkins is getting ready to work') == -1
+    #   retries: 10
+    #   delay: 5
+
+    # - name: Set crumb token
+    #   set_fact:
+    #     jenkins_crumb_token: "{{ jenkins_crumb.json.crumbRequestField }}={{ jenkins_crumb.json.crumb }}"
+
     - name: Restart jenkins when user changes.
       service: name=jenkins state=restarted
 
@@ -180,11 +209,20 @@
     - name: Run jenkins build for checkbox
       command: jenkins-jobs --conf /home/ubuntu/jenkins_jobs.ini update /home/ubuntu/CheckBoxBuild.yml
 
+    - name: Copying Checkbox.io Job XML 
+      copy: 
+        src: checkbox.xml
+        dest: /home/ubuntu/checkbox.xml
+      # when: "job_checkbox.stdout.find('checkbox.io') == -1"
+
     - name: Build the job
       command: "{{ item }}"
       with_items:
         - java -jar /opt/jenkins-cli.jar -s http://{{ JenkinsDns }}:8080/ who-am-i --username admin --password {{ admin_password }}
-        # - java -jar /opt/jenkins-cli.jar -s http://{{ JenkinsDns }}:8080/ build checkbox -v -w
+
+    - name: Build the job
+      shell: "java -jar /opt/jenkins-cli.jar -s http://{{ JenkinsDns }}:8080/ create-job checkbox2 < /home/ubuntu/checkbox.xml --username admin --password {{ admin_password }}"
+        # - java -jar /opt/jenkins-cli.jar -s http://{{ JenkinsDns }}:8080/ build checkbox --username admin --password {{ admin_password }} -v -w
 
     # - debug:
     #     msg: "{{ admin_password }}"
