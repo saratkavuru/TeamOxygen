@@ -93,22 +93,22 @@
     #     src: ./jenkins.CLI.xml
     #     dest: /var/lib/jenkins/jenkins.CLI.xml
 
-    - name: copy jenkins config
-      copy:
-        src: ./config.xml
-        dest: /var/lib/jenkins/config.xml
+    # - name: copy jenkins config
+    #   copy:
+    #     src: ./config.xml
+    #     dest: /var/lib/jenkins/config.xml
 
     - name: Restart jenkins when user changes.
       service: name=jenkins state=restarted
     
-    - name: Install nodejs and npm
-      apt:
-        pkg: "{{ item }}"
-        state: installed
-        update_cache: true
-      with_items:
-       - nodejs
-       - npm
+    # - name: Install nodejs and npm
+    #   apt:
+    #     pkg: "{{ item }}"
+    #     state: installed
+    #     update_cache: true
+    #   with_items:
+    #    - nodejs
+    #    - npm
     
     # - name: Add Maven repository 
     #   apt_repository:
@@ -157,20 +157,28 @@
     - set_fact:
         admin_password: "{{ out.stdout_lines[0] }}"
 
+    - name: copy jenkins config
+      copy:
+        src: ./config.xml
+        dest: /var/lib/jenkins/config.xml
+
+    - name: Restart jenkins when user changes.
+      service: name=jenkins state=restarted
+
+    - name: "Wait For Jenkins To Come Up"
+      uri:
+        url: "http://{{ JenkinsDns }}:8080/cli/"
+        status_code: 403
+      register: result
+      until: result.status == 403
+      retries: 10
+      delay: 5
+
     - name: jenkins job builder configuration
       action: template src="./jenkins_jobs.ini" dest="/home/ubuntu/jenkins_jobs.ini" owner=root group=root mode=0600
     
     - name: Run jenkins build for checkbox
       command: jenkins-jobs --conf /home/ubuntu/jenkins_jobs.ini update /home/ubuntu/CheckBoxBuild.yml
-
-    # - name: "Wait For Jenkins To Come Up"
-    #   uri:
-    #     url: "http://{{ JenkinsDns }}:8080/cli/"
-    #     status_code: 403
-    #   register: result
-    #   until: result.status == 403
-    #   retries: 100
-    #   delay: 100
 
     - name: Build the job
       command: "{{ item }}"
