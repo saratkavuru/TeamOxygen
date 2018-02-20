@@ -12,7 +12,7 @@
        state: installed
        update_cache: true
      with_items:
-       - nodejs
+       - nodejs-legacy
        - npm
    
    - name: Include vars from the vault
@@ -34,7 +34,7 @@
        - dns.yml
 
    -  name: Run aws.js for Jenkins
-      command: nodejs aws.js Jenkins
+      command: node aws.js Jenkins
       args:
         chdir:  /home/vagrant/Project/Milestone1
       environment:
