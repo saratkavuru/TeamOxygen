@@ -139,5 +139,8 @@
        MONGO_PASSWORD: "{{ MONGO_PASSWORD }}"
        MONGO_IP: "{{ CheckboxDns }}"
        MONGO_PORT: "{{ MONGO_PORT }}"  
+       MAIL_USER: "{{ MAIL_USER }}" 
+       MAIL_PASSWORD: "{{ MAIL_PASSWORD }}" 
+       MAIL_SMTP: "{{ MAIL_SMTP }}" 
 
 ...  
