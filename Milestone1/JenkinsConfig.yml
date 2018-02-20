@@ -164,6 +164,14 @@
         src: ./config.xml
         dest: /var/lib/jenkins/config.xml
 
+    - name: "Install Jenkins git plugin"
+      jenkins_plugin: 
+        name: git
+        params: "{{ jenkins_params }}"
+        url_password: "{{ admin_password }}"
+        url: http://{{ JenkinsDns }}:8080
+        state: present
+
     # - name: create .ssh
     #   file: path=/var/lib/jenkins/.ssh state=directory
 
@@ -225,15 +233,7 @@
     - name: Create the job
       shell: "java -jar /opt/jenkins-cli.jar -s http://{{ JenkinsDns }}:8080/ create-job checkbox2 < /home/ubuntu/configcheckbox.xml --username admin --password {{ admin_password }}"
         # - java -jar /opt/jenkins-cli.jar -s http://{{ JenkinsDns }}:8080/ build checkbox --username admin --password {{ admin_password }} -v -w
-    
-    - name: "Install Jenkins git plugin"
-      jenkins_plugin: 
-        name: git
-        params: "{{ jenkins_params }}"
-        url_password: "{{ admin_password }}"
-        url: http://{{ JenkinsDns }}:8080
-        state: present
-
+  
     # - debug:
     #     msg: "{{ admin_password }}"
 
