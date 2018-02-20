@@ -1,0 +1,115 @@
+---
+# ansible-playbook Checkbox.yml 
+
+- hosts: localhost
+  become: yes
+  
+  # vars:
+#     MONGO_PORT
+# MONGO_IP
+# MONGO_USER
+# MONGO_PASSWORD
+# MAIL_USER
+# MAIL_PASSWORD
+# MAIL_SMTP
+
+  tasks:
+   - name: "Install nginx,nodejs and npm"
+     apt:
+       name: "{{ item }}"
+       state: installed
+       update_cache: yes
+     with_items:
+       - nginx
+       - nodejs
+       - npm 
+       - python-pip
+
+   - name: "Include variables from cred"
+     include_vars: checkboxvar.yml
+
+   - name: "Verify that the repository exists"
+     stat:
+       path: /home/vagrant/Checkbox
+     register: repo_verify
+   
+   - name: "Clone repository if it doesn't exist"
+     git: 
+       repo: https://github.com/chrisparnin/checkbox.io.git
+       dest: /home/vagrant/Checkbox
+       clone: yes
+     when: repo_verify.stat.exists == False
+   
+   - name: "Modify default file"
+     lineinfile:
+       path: /home/vagrant/Checkbox/local-conf/default
+       regexp: '^(.*)root /Users/gameweld/bitbucket/checkbox.io/checkbox.io/public_html/;$'
+       line: 'root /home/vagrant/Checkbox/public_html/;'
+
+   - name: "Import the mongo db public key from keyserver"
+     apt_key:
+       keyserver: keyserver.ubuntu.com
+       id: 2930ADAE8CAF5059EE73BB4B58712A2291FA4AD5
+    
+   - name: "Add the mongo db repository"
+     apt_repository:
+       repo: deb https://repo.mongodb.org/apt/ubuntu {{ansible_distribution_release}}/mongodb-org/3.6 multiverse
+       state: present
+       update_cache: yes
+
+   - name: "Install Mongo DB"
+     apt:
+       name: mongodb-org
+       state: present
+       update_cache: yes
+   
+   - name: "Replace default template"
+     template:
+       src: /home/vagrant/Checkbox/local-conf/default
+       dest: /etc/nginx/sites-available/default
+       owner: root
+       group: root
+       mode: 0600
+    
+   - name: "Replace nginx template"
+     template:
+       src: /home/vagrant/Checkbox/local-conf/nginx.conf
+       dest: /etc/nginx/nginx.conf
+       owner: root
+       group: root
+       mode: 0600
+    
+   - name: "Start nginx"
+     service:
+       name: nginx
+       state: started
+
+   - name: "Start mongodb"
+     service:
+       name: mongod
+       state: started    
+
+   - name: "Run npm install"
+     command: npm install
+     args:
+       chdir: /home/vagrant/Checkbox/server-side/site
+   
+   - name: "Install pymongo using pip"
+     pip: 
+       name: pymongo
+       state: present
+    
+   - name: "Create mongo DB user"
+     mongodb_user:
+       database: admin 
+       name: "{{ MONGO_USER }}"
+       password: "{{ MONGO_PASSWORD }}"
+       roles: 'root'
+       state: present
+     environment:
+       MONGO_USER: "{{ MONGO_USER }}"
+       MONGO_PASSWORD: "{{ MONGO_PASSWORD }}"
+       MONGO_IP: "{{ MONGO_IP }}"
+       MONGO_PORT: "{{ MONGO_PORT }}"   
+       
+... 
