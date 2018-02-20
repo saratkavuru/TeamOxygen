@@ -20,6 +20,8 @@
     - jenkins_version: 2.60
     - jenkins_package_state: present
     - jenkins_jar_location: /opt/jenkins-cli.jar
+    - jenkins_params:
+        url_username: admin
   
   tasks:
     - name: Install add-apt-repostory
@@ -101,14 +103,14 @@
     - name: Restart jenkins when user changes.
       service: name=jenkins state=restarted
     
-    # - name: Install nodejs and npm
-    #   apt:
-    #     pkg: "{{ item }}"
-    #     state: installed
-    #     update_cache: true
-    #   with_items:
-    #    - nodejs
-    #    - npm
+    - name: Install nodejs and npm
+      apt:
+        pkg: "{{ item }}"
+        state: installed
+        update_cache: true
+      with_items:
+       - nodejs
+       - npm
     
     # - name: Add Maven repository 
     #   apt_repository:
@@ -211,18 +213,26 @@
 
     - name: Copying Checkbox.io Job XML 
       copy: 
-        src: checkbox.xml
-        dest: /home/ubuntu/checkbox.xml
+        src: configcheckbox.xml
+        dest: /home/ubuntu/configcheckbox.xml
       # when: "job_checkbox.stdout.find('checkbox.io') == -1"
 
-    - name: Build the job
+    - name: Create the job
       command: "{{ item }}"
       with_items:
         - java -jar /opt/jenkins-cli.jar -s http://{{ JenkinsDns }}:8080/ who-am-i --username admin --password {{ admin_password }}
 
-    - name: Build the job
-      shell: "java -jar /opt/jenkins-cli.jar -s http://{{ JenkinsDns }}:8080/ create-job checkbox2 < /home/ubuntu/checkbox.xml --username admin --password {{ admin_password }}"
+    - name: Create the job
+      shell: "java -jar /opt/jenkins-cli.jar -s http://{{ JenkinsDns }}:8080/ create-job checkbox2 < /home/ubuntu/configcheckbox.xml --username admin --password {{ admin_password }}"
         # - java -jar /opt/jenkins-cli.jar -s http://{{ JenkinsDns }}:8080/ build checkbox --username admin --password {{ admin_password }} -v -w
+    
+    - name: "Install Jenkins git plugin"
+      jenkins_plugin: 
+        name: git
+        params: "{{ jenkins_params }}"
+        url_password: "{{ admin_password }}"
+        url: http://{{ JenkinsDns }}:8080
+        state: present
 
     # - debug:
     #     msg: "{{ admin_password }}"
