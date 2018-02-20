@@ -11,5 +11,5 @@
             - origin/master
     builders:
         - shell: |
-            cd /home/ubuntu/checkbox.io/server-side/site
+            # cd /home/ubuntu/checkbox.io/server-side/site
             npm install

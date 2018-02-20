@@ -88,6 +88,16 @@
         name: 
           - jenkins-job-builder
 
+    # - name: copy jenkins cli
+    #   copy:
+    #     src: ./jenkins.CLI.xml
+    #     dest: /var/lib/jenkins/jenkins.CLI.xml
+
+    - name: copy jenkins config
+      copy:
+        src: ./config.xml
+        dest: /var/lib/jenkins/config.xml
+
     - name: Restart jenkins when user changes.
       service: name=jenkins state=restarted
     
@@ -152,7 +162,22 @@
     
     - name: Run jenkins build for checkbox
       command: jenkins-jobs --conf /home/ubuntu/jenkins_jobs.ini update /home/ubuntu/CheckBoxBuild.yml
-      
+
+    # - name: "Wait For Jenkins To Come Up"
+    #   uri:
+    #     url: "http://{{ JenkinsDns }}:8080/cli/"
+    #     status_code: 403
+    #   register: result
+    #   until: result.status == 403
+    #   retries: 100
+    #   delay: 100
+
+    - name: Build the job
+      command: "{{ item }}"
+      with_items:
+        - java -jar /opt/jenkins-cli.jar -s http://{{ JenkinsDns }}:8080/ who-am-i --username admin --password {{ admin_password }}
+        # - java -jar /opt/jenkins-cli.jar -s http://{{ JenkinsDns }}:8080/ build checkbox -v -w
+
     # - debug:
     #     msg: "{{ admin_password }}"
 
