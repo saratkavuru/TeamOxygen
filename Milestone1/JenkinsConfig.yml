@@ -112,15 +112,15 @@
        - nodejs
        - npm
     
-    - name: Add ansible repository
-      apt:
-        repo: ppa:ansible/ansible
-        update_cache: yes
+    # - name: Add ansible repository
+    #   apt_repository:
+    #     repo: ppa:ansible/ansible
+    #     update_cache: yes
 
-    - name: Install ansible
-      apt:
-        name: ansible   
-        state: present 
+    # - name: Install ansible
+    #   apt:
+    #     name: ansible   
+    #     state: present 
 
     # - name: Add Maven repository 
     #   apt_repository:
