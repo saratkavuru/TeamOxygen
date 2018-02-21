@@ -215,7 +215,11 @@
 
     - name: Create the job
       shell: "java -jar /opt/jenkins-cli.jar -s http://{{ JenkinsDns }}:8080/ create-job checkbox < /home/ubuntu/configcheckbox.xml --username admin --password {{ admin_password }}"
-        # - java -jar /opt/jenkins-cli.jar -s http://{{ JenkinsDns }}:8080/ build checkbox --username admin --password {{ admin_password }} -v -w
+
+    - name: Build the job
+      shell: "java -jar /opt/jenkins-cli.jar -s http://{{ JenkinsDns }}:8080/ build checkbox --username admin --password {{ admin_password }}"
+      
+      # - java -jar /opt/jenkins-cli.jar -s http://{{ JenkinsDns }}:8080/ build checkbox --username admin --password {{ admin_password }} -v -w
   
     # - debug:
     #     msg: "{{ admin_password }}"
