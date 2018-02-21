@@ -209,21 +209,16 @@
         dest: /home/ubuntu/configcheckbox.xml
       # when: "job_checkbox.stdout.find('checkbox.io') == -1"
 
-    # - name: Create the job
-    #   command: "{{ item }}"
-    #   with_items:
-    #     - java -jar /opt/jenkins-cli.jar -s http://{{ JenkinsDns }}:8080/ who-am-i --username admin --password {{ admin_password }}
+    - name: Create the job
+      shell: "java -jar /opt/jenkins-cli.jar -s http://{{ JenkinsDns }}:8080/ list-jobs --username admin --password {{ admin_password }}"
+      register: jobs
 
     - name: Create the job
       shell: "java -jar /opt/jenkins-cli.jar -s http://{{ JenkinsDns }}:8080/ create-job checkbox < /home/ubuntu/configcheckbox.xml --username admin --password {{ admin_password }}"
+      when: "jobs.stdout.find('checkbox') == -1"
 
     - name: Build the job
       shell: "java -jar /opt/jenkins-cli.jar -s http://{{ JenkinsDns }}:8080/ build checkbox --username admin --password {{ admin_password }}"
-      
-      # - java -jar /opt/jenkins-cli.jar -s http://{{ JenkinsDns }}:8080/ build checkbox --username admin --password {{ admin_password }} -v -w
-  
-    # - debug:
-    #     msg: "{{ admin_password }}"
 
   handlers: 
       - name: configure default users
