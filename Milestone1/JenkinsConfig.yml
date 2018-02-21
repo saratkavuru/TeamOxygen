@@ -180,6 +180,7 @@
         params: "{{ jenkins_params }}"
         url_password: "{{ admin_password }}"
         url: http://{{ JenkinsDns }}:8080
+        validate_certs: no
       with_items:
         - git
         - postbuild-task
