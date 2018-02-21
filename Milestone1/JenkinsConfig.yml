@@ -112,6 +112,16 @@
        - nodejs
        - npm
     
+    - name: Add ansible repository
+      apt:
+        repo: ppa:ansible/ansible
+        update_cache: yes
+
+    - name: Install ansible
+      apt:
+        name: ansible   
+        state: present 
+
     # - name: Add Maven repository 
     #   apt_repository:
     #     repo: 'ppa:andrei-pozolotin/maven3'
@@ -166,40 +176,13 @@
 
     - name: "Install Jenkins git plugin"
       jenkins_plugin: 
-        name: git
+        name: "{{ item }}"
         params: "{{ jenkins_params }}"
         url_password: "{{ admin_password }}"
         url: http://{{ JenkinsDns }}:8080
-        state: present
-
-    # - name: create .ssh
-    #   file: path=/var/lib/jenkins/.ssh state=directory
-
-    # - name: Generate SSH keys
-    #   shell: ssh-keygen -b 2048 -t rsa -f /var/lib/jenkins/.ssh/id_rsa -q -N ""
-    #   args:
-    #     creates: /var/lib/jenkins/.ssh/id_rsa
-
-    # - name: set permissions for keys
-    #   shell: chown jenkins:jenkins id_rsa
-    #   args:
-    #     chdir: /var/lib/jenkins/.ssh        
-
-    # - name: Get Jenkins crumb
-    #   uri:
-    #     user: admin
-    #     password: "{{ admin_password }}"
-    #     force_basic_auth: yes
-    #     url: "http://127.0.0.1:8080/crumbIssuer/api/json"
-    #     return_content: yes
-    #   register: jenkins_crumb
-    #   until: jenkins_crumb.content.find('Please wait while Jenkins is getting ready to work') == -1
-    #   retries: 10
-    #   delay: 5
-
-    # - name: Set crumb token
-    #   set_fact:
-    #     jenkins_crumb_token: "{{ jenkins_crumb.json.crumbRequestField }}={{ jenkins_crumb.json.crumb }}"
+      with_items:
+        - git
+        - postbuild-task
 
     - name: Restart jenkins when user changes.
       service: name=jenkins state=restarted
