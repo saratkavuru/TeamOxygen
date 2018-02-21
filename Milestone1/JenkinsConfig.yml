@@ -85,10 +85,10 @@
         state: "{{ jenkins_package_state }}"
       # notify: configure default users
 
-    - name: install pip dependencies
-      pip:
-        name: 
-          - jenkins-job-builder
+    # - name: install pip dependencies
+    #   pip:
+    #     name: 
+    #       - jenkins-job-builder
 
     # - name: copy jenkins cli
     #   copy:
@@ -196,11 +196,11 @@
       retries: 10
       delay: 5
 
-    - name: jenkins job builder configuration
-      action: template src="./jenkins_jobs.ini" dest="/home/ubuntu/jenkins_jobs.ini" owner=root group=root mode=0600
+    # - name: jenkins job builder configuration
+    #   action: template src="./jenkins_jobs.ini" dest="/home/ubuntu/jenkins_jobs.ini" owner=root group=root mode=0600
     
-    - name: Run jenkins build for checkbox
-      command: jenkins-jobs --conf /home/ubuntu/jenkins_jobs.ini update /home/ubuntu/CheckBoxBuild.yml
+    # - name: Run jenkins build for checkbox
+    #   command: jenkins-jobs --conf /home/ubuntu/jenkins_jobs.ini update /home/ubuntu/CheckBoxBuild.yml
 
     - name: Copying Checkbox.io Job XML 
       copy: 
@@ -208,13 +208,13 @@
         dest: /home/ubuntu/configcheckbox.xml
       # when: "job_checkbox.stdout.find('checkbox.io') == -1"
 
-    - name: Create the job
-      command: "{{ item }}"
-      with_items:
-        - java -jar /opt/jenkins-cli.jar -s http://{{ JenkinsDns }}:8080/ who-am-i --username admin --password {{ admin_password }}
+    # - name: Create the job
+    #   command: "{{ item }}"
+    #   with_items:
+    #     - java -jar /opt/jenkins-cli.jar -s http://{{ JenkinsDns }}:8080/ who-am-i --username admin --password {{ admin_password }}
 
     - name: Create the job
-      shell: "java -jar /opt/jenkins-cli.jar -s http://{{ JenkinsDns }}:8080/ create-job checkbox2 < /home/ubuntu/configcheckbox.xml --username admin --password {{ admin_password }}"
+      shell: "java -jar /opt/jenkins-cli.jar -s http://{{ JenkinsDns }}:8080/ create-job checkbox < /home/ubuntu/configcheckbox.xml --username admin --password {{ admin_password }}"
         # - java -jar /opt/jenkins-cli.jar -s http://{{ JenkinsDns }}:8080/ build checkbox --username admin --password {{ admin_password }} -v -w
   
     # - debug:
