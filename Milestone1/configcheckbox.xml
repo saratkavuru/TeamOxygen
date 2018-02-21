@@ -4,7 +4,7 @@
   <description></description>
   <keepDependencies>false</keepDependencies>
   <properties/>
-  <scm class="hudson.plugins.git.GitSCM" plugin="git@3.1.0">
+  <scm class="hudson.plugins.git.GitSCM" plugin="git@3.7.0">
     <configVersion>2</configVersion>
     <userRemoteConfigs>
       <hudson.plugins.git.UserRemoteConfig>
@@ -28,10 +28,10 @@
   <concurrentBuild>false</concurrentBuild>
   <builders>
     <hudson.tasks.Shell>
-      <command>cd ~ &amp;&amp; npm install
-node server.js workspace/checkbox.io/server-side/site</command>
+      <command>cd server-side/site
+npm install</command>
     </hudson.tasks.Shell>
   </builders>
   <publishers/>
   <buildWrappers/>
-</project>
+</project
