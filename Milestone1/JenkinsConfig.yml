@@ -184,6 +184,7 @@
       with_items:
         - git
         - postbuild-task
+        - build-token-root
 
     - name: Restart jenkins when user changes.
       service: name=jenkins state=restarted
@@ -218,7 +219,12 @@
       when: "jobs.stdout.find('checkbox') == -1"
 
     - name: Build the job
-      shell: "java -jar /opt/jenkins-cli.jar -s http://{{ JenkinsDns }}:8080/ build checkbox --username admin --password {{ admin_password }}"
+      shell: curl -v http://ec2-54-91-101-202.compute-1.amazonaws.com:8080/buildByToken/build?job=checkbox\&token=8fc61f12b36588bf13393a30a6af61e6
+
+    # Proper time or way to setup to make sure it sleeps and awakes after only build is finished.
+    # Need to find or think for build successful results as same problem with console command
+    # - name: Job Console output
+    #   shell: "java -jar /opt/jenkins-cli.jar -s http://{{ JenkinsDns }}:8080/ console checkbox --username admin --password {{ admin_password }}"
 
   handlers: 
       - name: configure default users
