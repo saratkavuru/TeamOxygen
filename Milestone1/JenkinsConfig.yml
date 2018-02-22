@@ -219,7 +219,7 @@
       when: "jobs.stdout.find('checkbox') == -1"
 
     - name: Build the job
-      shell: curl -v http://ec2-54-91-101-202.compute-1.amazonaws.com:8080/buildByToken/build?job=checkbox\&token=8fc61f12b36588bf13393a30a6af61e6
+      shell: curl -v http://{{ JenkinsDns }}:8080/buildByToken/build?job=checkbox\&token=8fc61f12b36588bf13393a30a6af61e6
 
     # Proper time or way to setup to make sure it sleeps and awakes after only build is finished.
     # Need to find or think for build successful results as same problem with console command
