@@ -86,10 +86,10 @@
         state: "{{ jenkins_package_state }}"
       # notify: configure default users
 
-    # - name: install pip dependencies
-    #   pip:
-    #     name: 
-    #       - jenkins-job-builder
+    - name: install pip dependencies
+      pip:
+        name: 
+          - jenkins-job-builder
 
     # - name: copy jenkins cli
     #   copy:
@@ -179,10 +179,6 @@
       delay: 10
       check_mode: no
 
-    - name: Copy checkbox build file to jenkins server
-      copy:
-        src: ./CheckBoxBuild.yml
-        dest: /home/ubuntu/CheckBoxBuild.yml
     
     - action: command cat /var/lib/jenkins/secrets/initialAdminPassword
       register: out
@@ -264,25 +260,30 @@
       retries: 10
       delay: 5
 
-    # - name: jenkins job builder configuration
-    #   action: template src="./jenkins_jobs.ini" dest="/home/ubuntu/jenkins_jobs.ini" owner=root group=root mode=0600
+    - name: Copy checkbox build file to jenkins server
+      template:
+        src: ./CheckBoxBuild.yml
+        dest: /home/ubuntu/CheckBoxBuild.yml
     
-    # - name: Run jenkins build for checkbox
-    #   command: jenkins-jobs --conf /home/ubuntu/jenkins_jobs.ini update /home/ubuntu/CheckBoxBuild.yml
+    - name: jenkins job builder configuration
+      action: template src="./jenkins_jobs.ini" dest="/home/ubuntu/jenkins_jobs.ini" owner=root group=root mode=0600
+    
+    - name: Run jenkins build for checkbox
+      command: jenkins-jobs --conf /home/ubuntu/jenkins_jobs.ini update /home/ubuntu/CheckBoxBuild.yml
 
-    - name: Copying Checkbox.io Job XML 
-      copy: 
-        src: configcheckbox.xml
-        dest: /home/ubuntu/configcheckbox.xml
+    # - name: Copying Checkbox.io Job XML 
+    #   copy: 
+    #     src: configcheckbox.xml
+    #     dest: /home/ubuntu/configcheckbox.xml
       # when: "job_checkbox.stdout.find('checkbox.io') == -1"
 
-    - name: Create the job
-      shell: "java -jar /opt/jenkins-cli.jar -s http://{{ JenkinsDns }}:8080/ list-jobs --username admin --password {{ admin_password }}"
-      register: jobs
+    # - name: Create the job
+    #   shell: "java -jar /opt/jenkins-cli.jar -s http://{{ JenkinsDns }}:8080/ list-jobs --username admin --password {{ admin_password }}"
+    #   register: jobs
 
-    - name: Create the job
-      shell: "java -jar /opt/jenkins-cli.jar -s http://{{ JenkinsDns }}:8080/ create-job checkbox < /home/ubuntu/configcheckbox.xml --username admin --password {{ admin_password }}"
-      when: "jobs.stdout.find('checkbox') == -1"
+    # - name: Create the job
+    #   shell: "java -jar /opt/jenkins-cli.jar -s http://{{ JenkinsDns }}:8080/ create-job checkbox < /home/ubuntu/configcheckbox.xml --username admin --password {{ admin_password }}"
+    #   when: "jobs.stdout.find('checkbox') == -1"
 
     - name: Build the job
       shell: curl -v http://{{ JenkinsDns }}:8080/buildByToken/build?job=checkbox\&token=8fc61f12b36588bf13393a30a6af61e6

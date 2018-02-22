@@ -11,7 +11,7 @@
           url: 'https://github.com/chrisparnin/checkbox.io'
           name: 'checkbox'
           branches:
-            - origin/master
+            - '*/master'
     builders:
         - shell: |
             cd server-side/site
