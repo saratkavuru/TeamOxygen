@@ -5,7 +5,7 @@
 # https://github.com/geerlingguy/ansible-role-jenkins/blob/master/handlers/main.yml
 # https://jjasghar.github.io/blog/2016/01/03/getting-jenkins-and-jenkins-job-builder-running/
 #
-# ansible-playbook JenkinsConfig.yml -i inventory -vvv
+# ansible-playbook  --ask-vault-pass JenkinsConfig.yml -i inventory -vvv
 
 - hosts: Jenkins
   become: yes
@@ -22,6 +22,7 @@
     - jenkins_jar_location: /opt/jenkins-cli.jar
     - jenkins_params:
         url_username: admin
+        url: http://{{ JenkinsDns }}:8080
   
   tasks:
     - name: Install add-apt-repostory
@@ -103,24 +104,35 @@
     - name: Restart jenkins when user changes.
       service: name=jenkins state=restarted
     
-    - name: Install nodejs and npm
-      apt:
-        pkg: "{{ item }}"
-        state: installed
-        update_cache: true
-      with_items:
-       - nodejs
-       - npm
-    
-    # - name: Add ansible repository
-    #   apt_repository:
-    #     repo: ppa:ansible/ansible
-    #     update_cache: yes
-
-    # - name: Install ansible
+    # - name: Install nodejs and npm
     #   apt:
-    #     name: ansible   
-    #     state: present 
+    #     pkg: "{{ item }}"
+    #     state: installed
+    #     update_cache: true
+    #   with_items:
+    #    - nodejs
+    #    - npm
+    
+    - name: Add ansible repository
+      apt_repository:
+        repo: ppa:ansible/ansible
+        update_cache: yes
+
+    - name: Install ansible
+      apt:
+        name: ansible   
+        state: present 
+
+    - name: Include vars from the vault
+      include_vars:
+        file: creds.yml
+      no_log: true
+
+    - name: Export AWSAccessKeyId as env variable
+      shell: export AWSAccessKeyId="{{ AWSAccessKeyId }}"
+
+    - name: Export AWSSecretKey as env variable
+      shell: export AWSSecretKey="{{ AWSSecretKey }}" 
 
     # - name: Add Maven repository 
     #   apt_repository:
@@ -174,12 +186,45 @@
         src: ./config.xml
         dest: /var/lib/jenkins/config.xml
 
-    - name: "Install Jenkins git plugin"
+    - name: copy package.json
+      copy: 
+        src: package.json
+        dest: /home/ubuntu/package.json
+
+    - name: copy aws.js
+      copy:
+        src: aws.js
+        dest: /home/ubuntu/aws.js 
+
+    - name: copy DevOps.pem
+      copy:
+        src: DevOps.pem
+        dest: /home/ubuntu/DevOps.pem
+        owner: jenkins
+        group: jenkins
+        mode: 0400
+
+    - name: copy checkbox.yml
+      copy:
+        src: Checkbox.yml
+        dest: /home/ubuntu/Checkbox.yml   
+    
+    - name: copy checkboxvar.yml
+      copy:
+        src: checkboxvar.yml
+        dest: /home/ubuntu/checkboxvar.yml
+    
+
+    - name: Install dependencies for aws.js
+      shell: npm install
+      args:
+        chdir: /home/ubuntu
+
+    - name: "Install Jenkins git and postbuild plugins"
       jenkins_plugin: 
         name: "{{ item }}"
         params: "{{ jenkins_params }}"
         url_password: "{{ admin_password }}"
-        url: http://{{ JenkinsDns }}:8080
         validate_certs: no
       with_items:
         - git
