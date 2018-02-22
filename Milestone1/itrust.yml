@@ -1,0 +1,130 @@
+---
+# ansible-playbook itrust.yml -i inventory -vvv
+
+- hosts: localhost
+  become: yes
+  vars:
+    root_db_password: root
+
+  vars_prompt:
+    - name: 'mysql_password'
+      prompt: 'Enter your mysql password'
+      private: yes
+    - name: 'Git_Username'
+      prompt: 'Enter ncsu git username'
+      private: no
+    - name: 'Git_Password'
+      prompt: 'Enter ncsu git password'
+      private: yes
+
+
+  tasks:
+   - name: "Install git, nginx, nodejs, npm and python-pip"
+     apt:
+       name: "{{ item }}"
+       state: installed
+       update_cache: yes
+     with_items:
+       - git
+       - nodejs
+       - npm
+       - python-pip
+       - mysql-server
+
+   - name: Add java repo
+     apt_repository: repo='ppa:openjdk-r/ppa'
+
+   - name: install java 8
+     apt: name=openjdk-8-jdk state=latest update-cache=yes force=yes
+     become: yes
+     
+   - name: Setting java path to Java 8 version
+     alternatives:
+       name: java
+       path: /usr/lib/jvm/java-1.8.0-openjdk-amd64/jre/bin/java
+
+   - name: add maven repo
+     apt_repository:
+       repo: 'ppa:andrei-pozolotin/maven3'
+       state: present
+       update_cache: yes
+
+   - name: uninstall existing maven
+     apt:
+       name: "{{ item }}"
+       purge: yes
+       update_cache: yes
+     with_items:
+       - maven
+       - maven2
+       - maven3
+
+   - name: install  maven
+     apt: name=maven3 state=latest update-cache=yes
+
+
+
+   - name: "Verify that the repository exists"
+     stat:
+       path: /home/vagrant/iTrust
+     register: repo_verify
+
+   - name: "Clone repository if it doesn't exist"
+     git:
+       repo: https://github.ncsu.edu/dguttik/iTrust2-v2.git
+       dest: /home/vagrant/iTrust
+       clone: yes
+     when: repo_verify.stat.exists == False   
+     
+   - name: "MySQL service config"
+     template:
+       src: /home/vagrant/Project/milestone1/mysql.cfg
+       dest: /etc/mysql/mysql.cfg
+       owner: root
+       group: root
+       mode: 0600
+
+   - name: "Client config"
+     template:
+       src: /home/vagrant/Project/Milestone1/my.cnf
+       dest: /etc/mysql/my.cnf
+       owner: root
+       group: root
+       mode: 0600
+
+   - name: start mysql
+     service: name=mysql
+              enabled=yes
+              state=started
+   - name: add group "tomcat"
+     group: name=tomcat
+
+   - name: add user "tomcat"
+     user: name=tomcat group=tomcat home=/usr/share/tomcat createhome=no
+     become: yes
+
+   - name: Download Tomcat
+     get_url: url=http://http://http://archive.apache.org/dist/tomcat/tomcat-9/v9.0.1/bin/apache-tomcat-9.0.1.tar.gz  dest=/opt/apache-tomcat-9.0.1.tar.gz
+
+   - name: Extract archive
+     command: chdir=/usr/share /bin/tar xvf /opt/apache-tomcat-9.0.1.tar.gz  -C /opt/ creates=/opt/apache-tomcat-9.0.1
+
+   - name: Symlink install directory
+     file: src=/opt/apache-tomcat-9.0.1 path=/usr/share/tomcat state=link
+
+   - name: Change ownership of Tomcat installation
+     file: path=/usr/share/tomcat/ owner=tomcat group=tomcat state=directory recurse=yes
+     
+  - name: Configure Tomcat server
+     template: src=server.xml dest=/usr/share/tomcat/conf/
+     notify: restart tomcat
+
+   - name: Configure Tomcat users
+     template: src=tomcat-users.xml dest=/usr/share/tomcat/conf/
+     notify: restart tomcat
+
+   - name: Install Tomcat init script
+     copy: src=tomcat-initscript.sh dest=/etc/init.d/tomcat mode=0755
+
+   - name: Start Tomcat
+     service: name=tomcat state=started enabled=yes
