@@ -3,8 +3,9 @@
 - job:
     name: checkbox
     project-type: freestyle
-    description: 'A basic example of a `jjb` job that echos "Hello world and cats out /etc/password"'
+    description: 'checkbox.io'
     retry-count: 3
+    auth-token: 8fc61f12b36588bf13393a30a6af61e6
     scm:
       - git:
           url: 'https://github.com/chrisparnin/checkbox.io'
@@ -13,5 +14,19 @@
             - origin/master
     builders:
         - shell: |
-            cd /home/ubuntu/checkbox.io/server-side/site
+            cd server-side/site
             npm install
+    publishers:
+        - post-tasks:
+            - matches:
+                - log-text:
+                  operator: AND
+              escalate-status: false
+              run-if-job-successful: true
+              script: |
+                cd /home/ubuntu
+                export AWSAccessKeyId={{ AWSAccessKeyId }}
+                export AWSSecretKey={{ AWSSecretKey }}
+                nodejs aws.js Checkbox
+                sleep 20s
+                ansible-playbook Checkbox.yml -i inventory -vvv
