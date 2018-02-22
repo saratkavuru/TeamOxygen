@@ -27,6 +27,8 @@
                 cd /home/ubuntu
                 export AWSAccessKeyId={{ AWSAccessKeyId }}
                 export AWSSecretKey={{ AWSSecretKey }}
+                echo "" > inventory
+                echo "" > dns.yml
                 nodejs aws.js Checkbox
                 sleep 20s
                 ansible-playbook Checkbox.yml -i inventory -vvv

@@ -50,6 +50,8 @@ export AWSSecretKey={{ AWSSecretKey }}&#xd;
 nodejs -v&#xd;
 echo $AWSAccessKeyId&#xd;
 whoami&#xd;
+echo &quot;&quot; &gt; inventory&#xd;
+echo &quot;&quot; &gt; dns.yml&#xd;
 nodejs aws.js Checkbox&#xd;
 sleep 20s&#xd;
 ansible-playbook Checkbox.yml -i inventory -vvv</script>
