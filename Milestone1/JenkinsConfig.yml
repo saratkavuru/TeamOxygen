@@ -78,34 +78,20 @@
         deb: "/tmp/jenkins_{{ jenkins_version }}_all.deb"
         state: installed
       when: jenkins_version is defined and specific_version.stat.exists
-      # notify: configure default users
 
     - name: Ensure Jenkins is installed.
       apt:
         name: jenkins
         state: "{{ jenkins_package_state }}"
-      # notify: configure default users
 
     - name: install pip dependencies
       pip:
         name: 
           - jenkins-job-builder
 
-    # - name: copy jenkins cli
-    #   copy:
-    #     src: ./jenkins.CLI.xml
-    #     dest: /var/lib/jenkins/jenkins.CLI.xml
-
-    # - name: copy jenkins config
-    #   copy:
-    #     src: ./config.xml
-    #     dest: /var/lib/jenkins/config.xml
-
     - name: Restart jenkins when user changes.
       service: name=jenkins state=restarted
-    
-    
-    
+        
     - name: Add nodesource apt key
       shell: curl -s https://deb.nodesource.com/gpgkey/nodesource.gpg.key | apt-key add -
 
@@ -144,27 +130,27 @@
     - name: Export AWSSecretKey as env variable
       shell: export AWSSecretKey="{{ AWSSecretKey }}" 
 
-    # - name: Add Maven repository 
-    #   apt_repository:
-    #     repo: 'ppa:andrei-pozolotin/maven3'
-    #     state: present
-    #     update_cache: yes    
+    - name: Add Maven repository 
+      apt_repository:
+        repo: 'ppa:andrei-pozolotin/maven3'
+        state: present
+        update_cache: yes    
 
-    # - name: Purge existing Maven configuration files
-    #   apt:
-    #     name: "{{ item }}"
-    #     purge: yes
-    #     update_cache: yes
-    #   with_items:
-    #     - maven
-    #     - maven2
-    #     - maven3
+    - name: Purge existing Maven configuration files
+      apt:
+        name: "{{ item }}"
+        purge: yes
+        update_cache: yes
+      with_items:
+        - maven
+        - maven2
+        - maven3
    
-    # - name: Install maven3
-    #   apt:
-    #     name: maven3
-    #     state: latest
-    #     update_cache: yes
+    - name: Install maven3
+      apt:
+        name: maven3
+        state: latest
+        update_cache: yes
     
     - include_vars:
         file: dns.yml
@@ -178,7 +164,6 @@
       retries: 5
       delay: 10
       check_mode: no
-
     
     - action: command cat /var/lib/jenkins/secrets/initialAdminPassword
       register: out
@@ -192,16 +177,6 @@
         src: ./config.xml
         dest: /var/lib/jenkins/config.xml
 
-    - name: copy package.json
-      copy: 
-        src: package.json
-        dest: /home/ubuntu/package.json
-
-    - name: copy aws.js
-      copy:
-        src: aws.js
-        dest: /home/ubuntu/aws.js 
-
     - name: copy DevOps.pem
       copy:
         src: DevOps.pem
@@ -210,17 +185,20 @@
         group: jenkins
         mode: 0400
 
-    - name: copy checkbox.yml
+    - name: Copy important files onto the Jenkins server
       copy:
-        src: Checkbox.yml
-        dest: /home/ubuntu/Checkbox.yml   
-    
-    - name: copy checkboxvar.yml
-      copy:
-        src: checkboxvar.yml
-        dest: /home/ubuntu/checkboxvar.yml
-    
-    - name: Create empty inventory and dns.yml
+        src: '{{ item }}'
+        dest: '/home/ubuntu/{{ item }}'
+        owner: ubuntu
+        group: ubuntu
+        mode: 0777
+      with_items:
+        - package.json
+        - aws.js
+        - Checkbox.yml
+        - checkboxvar.yml
+
+    - name: Create empty inventory and dns.yml on Jenkins server
       copy:
         content: ""
         dest: '/home/ubuntu/{{ item }}'
@@ -271,35 +249,7 @@
     - name: Run jenkins build for checkbox
       command: jenkins-jobs --conf /home/ubuntu/jenkins_jobs.ini update /home/ubuntu/CheckBoxBuild.yml
 
-    # - name: Copying Checkbox.io Job XML 
-    #   copy: 
-    #     src: configcheckbox.xml
-    #     dest: /home/ubuntu/configcheckbox.xml
-      # when: "job_checkbox.stdout.find('checkbox.io') == -1"
-
-    # - name: Create the job
-    #   shell: "java -jar /opt/jenkins-cli.jar -s http://{{ JenkinsDns }}:8080/ list-jobs --username admin --password {{ admin_password }}"
-    #   register: jobs
-
-    # - name: Create the job
-    #   shell: "java -jar /opt/jenkins-cli.jar -s http://{{ JenkinsDns }}:8080/ create-job checkbox < /home/ubuntu/configcheckbox.xml --username admin --password {{ admin_password }}"
-    #   when: "jobs.stdout.find('checkbox') == -1"
-
     - name: Build the job
       shell: curl -v http://{{ JenkinsDns }}:8080/buildByToken/build?job=checkbox\&token=8fc61f12b36588bf13393a30a6af61e6
-
-    # Proper time or way to setup to make sure it sleeps and awakes after only build is finished.
-    # Need to find or think for build successful results as same problem with console command
-    # - name: Job Console output
-    #   shell: "java -jar /opt/jenkins-cli.jar -s http://{{ JenkinsDns }}:8080/ console checkbox --username admin --password {{ admin_password }}"
-
-  handlers: 
-      - name: configure default users
-        template:
-          src: basic-security.groovy
-          dest: "{{ jenkins_home }}/init.groovy.d/basic-security.groovy"
-          owner: "{{ jenkins_process_user }}"
-          group: "{{ jenkins_process_group }}"
-          mode: 0775
 
 ...
