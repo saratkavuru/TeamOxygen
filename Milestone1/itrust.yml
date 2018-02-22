@@ -5,6 +5,10 @@
   become: yes
   vars:
     root_db_password: root
+    http_port: 80
+    https_port: 443
+    admin_username: admin
+    admin_password: adminsecret
 
   vars_prompt:
     - name: 'mysql_password'
@@ -19,27 +23,27 @@
 
 
   tasks:
-   - name: "Install git, nginx, nodejs, npm and python-pip"
-     apt:
-       name: "{{ item }}"
-       state: installed
-       update_cache: yes
-     with_items:
-       - git
-       - nodejs
-       - npm
-       - python-pip
-       - mysql-server
-       - maven
-     ignore_errors: yes
+  #  - name: "Install git, nginx, nodejs, npm and python-pip"
+  #    apt:
+  #      name: "{{ item }}"
+  #      state: installed
+  #      update_cache: yes
+  #    with_items:
+  #      - git
+  #      - nodejs
+  #      - npm
+  #      - python-pip
+  #      - mysql-server
+  #      - maven
+  #    ignore_errors: yes
 
    - name: Add java repo
      apt_repository: repo='ppa:openjdk-r/ppa'
 
-   - name: install java 8
-     apt: name=openjdk-8-jdk state=latest update-cache=yes force=yes
-     become: yes
-     ignore_errors: yes
+  #  - name: install java 8
+  #    apt: name=openjdk-8-jdk state=latest update-cache=yes force=yes
+  #    become: yes
+  #    ignore_errors: yes
      
    - name: Setting java path to Java 8 version
      alternatives:
@@ -64,8 +68,6 @@
 
   #  - name: install  maven
   #    apt: name=maven3 state=latest update-cache=yes
-
-
 
    - name: "Verify that the repository exists"
      stat:
@@ -107,7 +109,7 @@
      become: yes
 
    - name: Download Tomcat
-     get_url: url=http://http://http://archive.apache.org/dist/tomcat/tomcat-9/v9.0.1/bin/apache-tomcat-9.0.1.tar.gz  dest=/opt/apache-tomcat-9.0.1.tar.gz
+     get_url: url=http://archive.apache.org/dist/tomcat/tomcat-9/v9.0.1/bin/apache-tomcat-9.0.1.tar.gz  dest=/opt/apache-tomcat-9.0.1.tar.gz
 
    - name: Extract archive
      command: chdir=/usr/share /bin/tar xvf /opt/apache-tomcat-9.0.1.tar.gz  -C /opt/ creates=/opt/apache-tomcat-9.0.1
@@ -129,5 +131,26 @@
    - name: Install Tomcat init script
      copy: src=tomcat-initscript.sh dest=/etc/init.d/tomcat mode=0755
 
+   - name: systemd daemon-reload
+     shell: systemctl daemon-reload
+
+  #  - name: Install Tomcat init script
+  #    copy: src=tomcat-initscript.sh dest=/home/ubuntu mode=0755
+
+  #  - name: start tomcat
+  #    command: "nohup /etc/init.d/tomcat/tomcat-initscript.sh"
+
    - name: Start Tomcat
      service: name=tomcat state=started enabled=yes
+
+   - name: wait for tomcat to start
+     wait_for: port={{http_port}}
+
+  handlers:
+    - name: restart tomcat
+      service: name=tomcat state=restarted
+      
+    - name: restart iptables
+      service: name=iptables state=restarted
+
+...
