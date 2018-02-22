@@ -14,6 +14,7 @@
      with_items:
        - nodejs-legacy
        - npm
+     ignore_errors: yes
    
    - name: Include vars from the vault
      include_vars:
