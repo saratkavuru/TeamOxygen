@@ -104,15 +104,25 @@
     - name: Restart jenkins when user changes.
       service: name=jenkins state=restarted
     
-    # - name: Install nodejs and npm
-    #   apt:
-    #     pkg: "{{ item }}"
-    #     state: installed
-    #     update_cache: true
-    #   with_items:
-    #    - nodejs
-    #    - npm
     
+    
+    - name: Add nodesource apt key
+      shell: curl -s https://deb.nodesource.com/gpgkey/nodesource.gpg.key | apt-key add -
+
+    - name: Install the nodejs LTS repos
+      apt_repository:
+        repo: deb https://deb.nodesource.com/node_9.x {{ ansible_distribution_release }} main
+        state: present
+        update_cache: yes
+
+    - name: Install nodejs and npm
+      apt:
+        pkg: "{{ item }}"
+        state: present
+        update_cache: true
+      with_items:
+       - nodejs
+
     - name: Add ansible repository
       apt_repository:
         repo: ppa:ansible/ansible
@@ -214,6 +224,17 @@
         src: checkboxvar.yml
         dest: /home/ubuntu/checkboxvar.yml
     
+    - name: Create empty inventory and dns.yml
+      copy:
+        content: ""
+        dest: '/home/ubuntu/{{ item }}'
+        force: yes
+        owner: ubuntu
+        group: ubuntu
+        mode: 0777
+      with_items:
+        - inventory
+        - dns.yml
 
     - name: Install dependencies for aws.js
       shell: npm install
