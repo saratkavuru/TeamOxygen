@@ -30,6 +30,8 @@
        - npm
        - python-pip
        - mysql-server
+       - maven
+     ignore_errors: yes
 
    - name: Add java repo
      apt_repository: repo='ppa:openjdk-r/ppa'
@@ -37,30 +39,31 @@
    - name: install java 8
      apt: name=openjdk-8-jdk state=latest update-cache=yes force=yes
      become: yes
+     ignore_errors: yes
      
    - name: Setting java path to Java 8 version
      alternatives:
        name: java
        path: /usr/lib/jvm/java-1.8.0-openjdk-amd64/jre/bin/java
 
-   - name: add maven repo
-     apt_repository:
-       repo: 'ppa:andrei-pozolotin/maven3'
-       state: present
-       update_cache: yes
+  #  - name: add maven repo
+  #    apt_repository:
+  #      repo: 'ppa:andrei-pozolotin/maven3'
+  #      state: present
+  #      update_cache: yes
 
-   - name: uninstall existing maven
-     apt:
-       name: "{{ item }}"
-       purge: yes
-       update_cache: yes
-     with_items:
-       - maven
-       - maven2
-       - maven3
+  #  - name: uninstall existing maven
+  #    apt:
+  #      name: "{{ item }}"
+  #      purge: yes
+  #      update_cache: yes
+  #    with_items:
+  #      - maven
+  #      - maven2
+  #      - maven3
 
-   - name: install  maven
-     apt: name=maven3 state=latest update-cache=yes
+  #  - name: install  maven
+  #    apt: name=maven3 state=latest update-cache=yes
 
 
 
@@ -71,7 +74,7 @@
 
    - name: "Clone repository if it doesn't exist"
      git:
-       repo: https://github.ncsu.edu/dguttik/iTrust2-v2.git
+       repo: https://github.ncsu.edu/engr-csc326-staff/iTrust2-v2
        dest: /home/vagrant/iTrust
        clone: yes
      when: repo_verify.stat.exists == False   
@@ -115,7 +118,7 @@
    - name: Change ownership of Tomcat installation
      file: path=/usr/share/tomcat/ owner=tomcat group=tomcat state=directory recurse=yes
      
-  - name: Configure Tomcat server
+   - name: Configure Tomcat server
      template: src=server.xml dest=/usr/share/tomcat/conf/
      notify: restart tomcat
 
