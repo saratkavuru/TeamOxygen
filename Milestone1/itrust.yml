@@ -81,7 +81,7 @@
     
     - name: clone the itrust repo from git
       git: 
-        repo: 'https://agoel5:B2WTA62B@github.ncsu.edu/engr-csc326-staff/iTrust2-v2'
+        repo: 'https://@github.ncsu.edu/engr-csc326-staff/iTrust2-v2'
         dest: "{{ansible_env.HOME}}/development/iTrust-v2"
         clone: yes
         force: yes
