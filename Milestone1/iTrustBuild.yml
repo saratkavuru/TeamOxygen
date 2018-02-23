@@ -7,21 +7,15 @@
     retry-count: 3
     auth-token: 8fc61f12b36588bf13393a30a6af61e6
     wrappers:
-      - credentials-binding:
-          - username-password-separated:
-              credential-id: b3e6f337-5d44-4f57-921c-1632d796caaf
-              username: git_username 
-              password: git_password
-    scm:
-      - git:
-          url: 'https://www.github.ncsu.edu/engr-csc326-staff/iTrust2-v2'
-          credentials-id: b3e6f337-5d44-4f57-921c-1632d796caaf
-          name: 'iTrust'
-          branches:
-            - '*/master'
+      - inject:
+            properties-content: |
+                username = {{ git_username }}
+                password = {{ git_password }}
     builders:
         - shell: |
-                cd iTrust2
+                rm -rfd iTrust2-v2
+                git clone https://$username:$password@github.ncsu.edu/engr-csc326-staff/iTrust2-v2
+                cd iTrust2-v2/iTrust2
                 mv src/main/java/db.properties.template src/main/java/db.properties
                 mv src/main/resources/hibernate.properties.template src/main/resources/hibernate.properties
                 mv src/main/java/email.properties.template src/main/java/email.properties
