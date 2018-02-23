@@ -2,10 +2,10 @@
 
 ## Contribution:
 **DevTech:**
-agoel5 - Jenkins Configuring
-dguttik - iTrust Building
-skavuru - Checkbox building
-tgoel - Jenkins-job-builder
+- agoel5 - Jenkins Configuring
+- dguttik - iTrust Building
+- skavuru - Checkbox building
+- tgoel - Jenkins-job-builder
 
 ## Screencast
 Please click here for the Screencast.
@@ -13,8 +13,8 @@ Please click here for the Screencast.
 #### Few Notes:
 
 - creds.yml Ansible vault file.
- - The credentials (AWSAccessKeyId, AWSSecretKey, git_username, git_password ) for GitHub and AWS accounts should be stored in an ansible vault file in the Ansible directory as key:value pairs (DOTOKEN : 'xxx').
- - DevOps.pem should be the name of the ssh keyfile to AWS.
+- The credentials (AWSAccessKeyId, AWSSecretKey, git_username, git_password ) for GitHub and AWS accounts should be stored in an ansible vault file in the Ansible directory as key:value pairs (DOTOKEN : 'xxx').
+- DevOps.pem should be the name of the ssh keyfile to AWS.
 
  ## Experience:
 
