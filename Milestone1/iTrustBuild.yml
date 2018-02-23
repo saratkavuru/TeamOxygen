@@ -1,0 +1,34 @@
+#https://docs.openstack.org/infra/jenkins-job-builder/publishers.html#publishers.post-tasks
+
+- job:
+    name: iTrust
+    project-type: freestyle
+    description: 'iTrust'
+    retry-count: 3
+    auth-token: 8fc61f12b36588bf13393a30a6af61e6
+    scm:
+      - git:
+          url: 'https://{{ git_username }}:{{ git_password }}github.ncsu.edu/engr-csc326-staff/iTrust2-v2'
+          name: 'checkbox'
+          branches:
+            - '*/master'
+    builders:
+        - shell: |
+            cd iTrust-v2/iTrust2
+            mvn clean test verify checkstyle:checkstyle
+    publishers:
+        - post-tasks:
+            - matches:
+                - log-text:
+                  operator: AND
+              escalate-status: false
+              run-if-job-successful: true
+              script: |
+                cd /home/ubuntu
+                export AWSAccessKeyId={{ AWSAccessKeyId }}
+                export AWSSecretKey={{ AWSSecretKey }}
+                echo "" > inventory
+                echo "" > dns.yml
+                nodejs aws.js iTrust
+                sleep 20s
+                ansible-playbook iTrust.yml -i inventory -vvv
