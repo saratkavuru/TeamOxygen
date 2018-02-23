@@ -1,5 +1,5 @@
 ---
- - hosts: Jenkins
+ - hosts: iTrust
    tasks:  
     - name: update apt
       apt:
@@ -81,7 +81,7 @@
     
     - name: clone the itrust repo from git
       git: 
-        repo: 'https://@github.ncsu.edu/engr-csc326-staff/iTrust2-v2'
+        repo: 'https://{{ git_username }}:{{ git_password }}@github.ncsu.edu/engr-csc326-staff/iTrust2-v2.git'
         dest: "{{ansible_env.HOME}}/development/iTrust-v2"
         clone: yes
         force: yes
