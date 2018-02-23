@@ -1,156 +1,143 @@
 ---
-# ansible-playbook itrust.yml -i inventory -vvv
+ - hosts: Jenkins
+   tasks:  
+    - name: update apt
+      apt:
+        update_cache: yes
+      become: true
+    
+    - name: Add Java repository
+      apt_repository: repo='ppa:webupd8team/java' state=present update_cache=yes 
+      become: true
+    
+    - name: Add license for java
+      debconf: name='oracle-java8-installer' question='shared/accepted-oracle-license-v1-1' value=true vtype=select
+      become: true
+    
+    - name: Install java
+      apt: name={{item}} state=present
+      with_items:
+        - oracle-java8-installer
+        - oracle-java8-set-default
+      become: true
+    
+    - name: Install ca-certificates
+      apt: name=ca-certificates state=present
+      become: true
+    
+    - name: Install git
+      apt: name=git state=present
+      become: true
+    
+    - name: Install maven
+      apt: name=maven state=present
+      become: true
+    
+    - name: Install python-mysqldb
+      apt: name=python-mysqldb state=present
+      become: true
+    
+    - name: create development dir
+      file: path="{{ansible_env.HOME}}/development" state=directory 
+      become: true
+    
+    - name: downloading apache tomcat9
+      get_url:
+        url: http://www-eu.apache.org/dist/tomcat/tomcat-9/v9.0.5/bin/apache-tomcat-9.0.5.tar.gz
+        # url: http://apache.claz.org/tomcat/tomcat-9/v9.0.0.M26/bin/apache-tomcat-9.0.0.M26.tar.gz
+        # url: http://apache.mirrors.hoobly.com/tomcat/tomcat-9/v9.0.0.M26/bin/apache-tomcat-9.0.0.M26.tar.gz
+        dest: "{{ansible_env.HOME}}/apache-tomcat-9.0.0.M26.tar.gz"
+        force: no
+        mode: 755
+      become: true
+    
+    - name: unzip the apache9 files
+      unarchive:
+        src: "{{ansible_env.HOME}}/apache-tomcat-9.0.0.M26.tar.gz"
+        dest: "{{ansible_env.HOME}}/development"
+        remote_src: yes
+      become: true
+    
+    - name: Install sql-server
+      apt: name=mysql-server state=present
+      become: true
+    
+    - name: To accept lower case table names in mysql
+      lineinfile:
+        path: /etc/mysql/my.cnf
+        regexp: "skip-external-locking"
+        insertafter: "skip-external-locking"
+        line: "lower_case_table_names=1"
+      become: true
 
-- hosts: localhost
-  become: yes
-  vars:
-    root_db_password: root
-    http_port: 80
-    https_port: 443
-    admin_username: admin
-    admin_password: adminsecret
+    - name: restart mysql
+      shell: sudo service mysql restart
+    
+    # - name: restart mysql-server
+    #   service:
+    #     name: mysql
+    #     state: restarted
+    #   become: true
+    
+    - name: wait for my-sql to start
+      wait_for: port=3306
+      become: true
+    
+    - name: create itrust directory for the itrust app
+      file: path="{{ansible_env.HOME}}/development/iTrust-v23" state=directory
+      become: true
+    
+    - name: clone the itrust repo from git
+      git: 
+        repo: 'https://agoel5:B2WTA62B@github.ncsu.edu/engr-csc326-staff/iTrust2-v2'
+        dest: "{{ansible_env.HOME}}/development/iTrust-v2"
+        clone: yes
+        force: yes
+      become: true
 
-  vars_prompt:
-    - name: 'mysql_password'
-      prompt: 'Enter your mysql password'
-      private: yes
-    - name: 'Git_Username'
-      prompt: 'Enter ncsu git username'
-      private: no
-    - name: 'Git_Password'
-      prompt: 'Enter ncsu git password'
-      private: yes
+    - name: mysql password
+      shell: sudo mv {{ansible_env.HOME}}/development/iTrust-v2/iTrust2/src/main/java/db.properties.template {{ansible_env.HOME}}/development/iTrust-v2/iTrust2/src/main/java/db.properties
 
+    - name: hibernate
+      shell: sudo mv {{ansible_env.HOME}}/development/iTrust-v2/iTrust2/src/main/resources/hibernate.properties.template {{ansible_env.HOME}}/development/iTrust-v2/iTrust2/src/main/resources/hibernate.properties
 
-  tasks:
-  #  - name: "Install git, nginx, nodejs, npm and python-pip"
-  #    apt:
-  #      name: "{{ item }}"
-  #      state: installed
-  #      update_cache: yes
-  #    with_items:
-  #      - git
-  #      - nodejs
-  #      - npm
-  #      - python-pip
-  #      - mysql-server
-  #      - maven
-  #    ignore_errors: yes
+    - name: email copy
+      shell: sudo mv {{ansible_env.HOME}}/development/iTrust-v2/iTrust2/src/main/java/email.properties.template {{ansible_env.HOME}}/development/iTrust-v2/iTrust2/src/main/java/email.properties
 
-   - name: Add java repo
-     apt_repository: repo='ppa:openjdk-r/ppa'
+    - name: run mvn package
+      command: mvn process-test-classes
+      ignore_errors: True
+      failed_when: False
+      args:
+        chdir: "{{ansible_env.HOME}}/development/iTrust-v2/iTrust2" 
+      become: true
+    
+    - name: run mvn jetty
+      command: nohup mvn jetty:run &
+      ignore_errors: True
+      failed_when: False
+      args:
+        chdir: "{{ansible_env.HOME}}/development/iTrust-v2/iTrust2" 
+      become: true
 
-  #  - name: install java 8
-  #    apt: name=openjdk-8-jdk state=latest update-cache=yes force=yes
-  #    become: yes
-  #    ignore_errors: yes
-     
-   - name: Setting java path to Java 8 version
-     alternatives:
-       name: java
-       path: /usr/lib/jvm/java-1.8.0-openjdk-amd64/jre/bin/java
-
-  #  - name: add maven repo
-  #    apt_repository:
-  #      repo: 'ppa:andrei-pozolotin/maven3'
-  #      state: present
-  #      update_cache: yes
-
-  #  - name: uninstall existing maven
-  #    apt:
-  #      name: "{{ item }}"
-  #      purge: yes
-  #      update_cache: yes
-  #    with_items:
-  #      - maven
-  #      - maven2
-  #      - maven3
-
-  #  - name: install  maven
-  #    apt: name=maven3 state=latest update-cache=yes
-
-   - name: "Verify that the repository exists"
-     stat:
-       path: /home/vagrant/iTrust
-     register: repo_verify
-
-   - name: "Clone repository if it doesn't exist"
-     git:
-       repo: https://github.ncsu.edu/engr-csc326-staff/iTrust2-v2
-       dest: /home/vagrant/iTrust
-       clone: yes
-     when: repo_verify.stat.exists == False   
-     
-   - name: "MySQL service config"
-     template:
-       src: /home/vagrant/Project/milestone1/mysql.cfg
-       dest: /etc/mysql/mysql.cfg
-       owner: root
-       group: root
-       mode: 0600
-
-   - name: "Client config"
-     template:
-       src: /home/vagrant/Project/Milestone1/my.cnf
-       dest: /etc/mysql/my.cnf
-       owner: root
-       group: root
-       mode: 0600
-
-   - name: start mysql
-     service: name=mysql
-              enabled=yes
-              state=started
-   - name: add group "tomcat"
-     group: name=tomcat
-
-   - name: add user "tomcat"
-     user: name=tomcat group=tomcat home=/usr/share/tomcat createhome=no
-     become: yes
-
-   - name: Download Tomcat
-     get_url: url=http://archive.apache.org/dist/tomcat/tomcat-9/v9.0.1/bin/apache-tomcat-9.0.1.tar.gz  dest=/opt/apache-tomcat-9.0.1.tar.gz
-
-   - name: Extract archive
-     command: chdir=/usr/share /bin/tar xvf /opt/apache-tomcat-9.0.1.tar.gz  -C /opt/ creates=/opt/apache-tomcat-9.0.1
-
-   - name: Symlink install directory
-     file: src=/opt/apache-tomcat-9.0.1 path=/usr/share/tomcat state=link
-
-   - name: Change ownership of Tomcat installation
-     file: path=/usr/share/tomcat/ owner=tomcat group=tomcat state=directory recurse=yes
-     
-   - name: Configure Tomcat server
-     template: src=server.xml dest=/usr/share/tomcat/conf/
-     notify: restart tomcat
-
-   - name: Configure Tomcat users
-     template: src=tomcat-users.xml dest=/usr/share/tomcat/conf/
-     notify: restart tomcat
-
-   - name: Install Tomcat init script
-     copy: src=tomcat-initscript.sh dest=/etc/init.d/tomcat mode=0755
-
-   - name: systemd daemon-reload
-     shell: systemctl daemon-reload
-
-  #  - name: Install Tomcat init script
-  #    copy: src=tomcat-initscript.sh dest=/home/ubuntu mode=0755
-
-  #  - name: start tomcat
-  #    command: "nohup /etc/init.d/tomcat/tomcat-initscript.sh"
-
-   - name: Start Tomcat
-     service: name=tomcat state=started enabled=yes
-
-   - name: wait for tomcat to start
-     wait_for: port={{http_port}}
-
-  handlers:
-    - name: restart tomcat
-      service: name=tomcat state=restarted
+    # - name: wait for itrust app to execute
+    #   wait_for:
+    #     path: "{{ansible_env.HOME}}/development/iTrust-v2/iTrust/target/iTrust-2.0.0.war"
+    #     state: present
+    #     delay: 10
+    #   become: true
+    
+    # - name: copy .war to tomcat
+    #   copy:
+    #     src: "{{ansible_env.HOME}}/development/iTrust-v23/iTrust/target/iTrust-23.0.0.war"
+    #     dest: "{{ansible_env.HOME}}/development/apache-tomcat-9.0.0.M26/webapps/iTrust.war"
+    #     remote_src: yes
+    #   become: true
       
-    - name: restart iptables
-      service: name=iptables state=restarted
-
-...
+    # - name: start tomcat
+    #   command: "nohup {{ansible_env.HOME}}/development/apache-tomcat-9.0.0.M26/bin/startup.sh"
+    #   become: true
+    
+    - name: wait for tomcat to start
+      wait_for: port=8080
+      become: true
