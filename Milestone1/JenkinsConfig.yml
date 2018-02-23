@@ -178,7 +178,7 @@
         src: ./config.xml
         dest: /var/lib/jenkins/config.xml
 
-    - name: copy DevOps.pem
+    - name: copy DevOps.pem for checkbox
       copy:
         src: DevOps.pem
         dest: /home/ubuntu/DevOps.pem
@@ -186,7 +186,23 @@
         group: jenkins
         mode: 0400
 
-    - name: Copy important files onto the Jenkins server
+    - name: create a directory for iTrust
+      file:
+        path: /home/ubuntu/iTrust
+        state: directory
+        owner: jenkins
+        group: jenkins
+        mode: 0755
+
+    - name: copy DevOps.pem for iTrust
+      copy:
+        src: DevOps.pem
+        dest: /home/ubuntu/iTrust/DevOps.pem
+        owner: jenkins
+        group: jenkins
+        mode: 0400    
+
+    - name: Copy important files onto the Jenkins server for Checkbox
       copy:
         src: '{{ item }}'
         dest: '/home/ubuntu/{{ item }}'
@@ -199,7 +215,26 @@
         - Checkbox.yml
         - checkboxvar.yml
 
-    - name: Create empty inventory and dns.yml on Jenkins server
+    - name: Copy important files onto the Jenkins server for iTrust
+      copy:
+        src: '{{ item }}'
+        dest: '/home/ubuntu/iTrust/{{ item }}'
+        owner: ubuntu
+        group: ubuntu
+        mode: 0777
+      with_items:
+        - package.json
+        - aws.js
+
+    - name: Copy iTrust.yml as a template onto the Jenkins server for iTrust
+      template:
+        src: iTrust.yml
+        dest: '/home/ubuntu/iTrust/iTrust.yml' 
+        owner: ubuntu
+        group: ubuntu
+        mode: 0777
+
+    - name: Create empty inventory and dns.yml on Jenkins server for checkbox
       copy:
         content: ""
         dest: '/home/ubuntu/{{ item }}'
@@ -211,10 +246,27 @@
         - inventory
         - dns.yml
 
-    - name: Install dependencies for aws.js
+    - name: Create empty inventory and dns.yml on Jenkins server for iTrust
+      copy:
+        content: ""
+        dest: '/home/ubuntu/iTrust/{{ item }}'
+        force: yes
+        owner: ubuntu
+        group: ubuntu
+        mode: 0777
+      with_items:
+        - inventory
+        - dns.yml     
+
+    - name: Install dependencies for aws.js for checkbox
       shell: npm install
       args:
         chdir: /home/ubuntu
+
+    - name: Install dependencies for aws.js for iTrust
+      shell: npm install
+      args:
+        chdir: /home/ubuntu/iTrust    
 
     - name: "Install Jenkins git and postbuild plugins"
       jenkins_plugin: 
@@ -226,6 +278,7 @@
         - git
         - postbuild-task
         - build-token-root
+        - credentials-binding
 
     - name: Restart jenkins when user changes.
       service: name=jenkins state=restarted
@@ -241,16 +294,53 @@
 
     - name: Copy checkbox build file to jenkins server
       template:
-        src: ./CheckBoxBuild.yml
+        src: CheckBoxBuild.yml
         dest: /home/ubuntu/CheckBoxBuild.yml
     
+    - name: Copy iTrust build file to jenkins server
+      template:
+        src: iTrustBuild.yml
+        dest: /home/ubuntu/iTrust/iTrustBuild.yml
+
     - name: jenkins job builder configuration
       action: template src="./jenkins_jobs.ini" dest="/home/ubuntu/jenkins_jobs.ini" owner=root group=root mode=0600
-    
+  
     - name: Run jenkins build for checkbox
       command: jenkins-jobs --conf /home/ubuntu/jenkins_jobs.ini update /home/ubuntu/CheckBoxBuild.yml
+      environment:
+        git_username: "{{ git_username }}"
+        git_password: "{{ git_password }}"
 
-    - name: Build the job
+    - name: Run jenkins build for iTrust
+      command: jenkins-jobs --conf /home/ubuntu/jenkins_jobs.ini update /home/ubuntu/iTrust/iTrustBuild.yml
+  
+    - name: Build checkbox
       shell: curl -v http://{{ JenkinsDns }}:8080/buildByToken/build?job=checkbox\&token=8fc61f12b36588bf13393a30a6af61e6
+    
+    # Should build checkbox
+
+    # Rest are for iTrust in Jenkins
+    - name: Install python-mysqldb
+      apt: name=python-mysqldb state=present
+      become: true
+    
+    - name: Install sql-server
+      apt: name=mysql-server state=present
+      become: true
+    
+    - name: To accept lower case table names in mysql
+      lineinfile:
+        path: /etc/mysql/my.cnf
+        regexp: "skip-external-locking"
+        insertafter: "skip-external-locking"
+        line: "lower_case_table_names=1"
+      become: true
+    
+    - name: restart mysql
+      shell: sudo service mysql restart
+    
+    - name: wait for my-sql to start
+      wait_for: port=3306
+      become: true
 
 ...
