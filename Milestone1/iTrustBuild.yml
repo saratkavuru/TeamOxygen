@@ -34,6 +34,6 @@
                 echo "" > inventory
                 echo "" > dns.yml
                 nodejs aws.js iTrust
-                sleep 20s
+                sleep 25s
                 ansible-playbook iTrust.yml -i inventory -vvv
                 
