@@ -44,8 +44,6 @@
     - name: downloading apache tomcat9
       get_url:
         url: http://www-eu.apache.org/dist/tomcat/tomcat-9/v9.0.5/bin/apache-tomcat-9.0.5.tar.gz
-        # url: http://apache.claz.org/tomcat/tomcat-9/v9.0.0.M26/bin/apache-tomcat-9.0.0.M26.tar.gz
-        # url: http://apache.mirrors.hoobly.com/tomcat/tomcat-9/v9.0.0.M26/bin/apache-tomcat-9.0.0.M26.tar.gz
         dest: "{{ansible_env.HOME}}/apache-tomcat-9.0.0.M26.tar.gz"
         force: no
         mode: 755
@@ -72,12 +70,6 @@
 
     - name: restart mysql
       shell: sudo service mysql restart
-    
-    # - name: restart mysql-server
-    #   service:
-    #     name: mysql
-    #     state: restarted
-    #   become: true
     
     - name: wait for my-sql to start
       wait_for: port=3306
@@ -113,30 +105,12 @@
       become: true
     
     - name: run mvn jetty
-      command: nohup mvn jetty:run &
+      shell: "nohup mvn jetty:run &"
       ignore_errors: True
       failed_when: False
       args:
         chdir: "{{ansible_env.HOME}}/development/iTrust-v2/iTrust2" 
       become: true
-
-    # - name: wait for itrust app to execute
-    #   wait_for:
-    #     path: "{{ansible_env.HOME}}/development/iTrust-v2/iTrust/target/iTrust-2.0.0.war"
-    #     state: present
-    #     delay: 10
-    #   become: true
-    
-    # - name: copy .war to tomcat
-    #   copy:
-    #     src: "{{ansible_env.HOME}}/development/iTrust-v23/iTrust/target/iTrust-23.0.0.war"
-    #     dest: "{{ansible_env.HOME}}/development/apache-tomcat-9.0.0.M26/webapps/iTrust.war"
-    #     remote_src: yes
-    #   become: true
-      
-    # - name: start tomcat
-    #   command: "nohup {{ansible_env.HOME}}/development/apache-tomcat-9.0.0.M26/bin/startup.sh"
-    #   become: true
     
     - name: wait for tomcat to start
       wait_for: port=8080
