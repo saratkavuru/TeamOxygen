@@ -41,5 +41,10 @@
       environment:
         AWSAccessKeyId : "{{ AWSAccessKeyId }}"
         AWSSecretKey : "{{ AWSSecretKey }}"  
+   
+   - pause:
+       seconds: 10
 
+   - name: Refresh inventory
+     meta: refresh_inventory
 ...     

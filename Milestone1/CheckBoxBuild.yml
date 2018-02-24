@@ -30,5 +30,5 @@
                 echo "" > inventory
                 echo "" > dns.yml
                 nodejs aws.js Checkbox
-                sleep 25s
+                sleep 45s
                 ansible-playbook Checkbox.yml -i inventory -vvv
