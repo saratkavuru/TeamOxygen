@@ -42,4 +42,4 @@
  
  - While trying to deploy checkbox.io , we've encountered some trouble while trying to set up a mongodb user and accessing the checkbox application. After going through the configuration files and actual code of the appication, we've ended up using mongodb_user ansible module and setting [MONGO_PORT] according to the code in server.js and replacing one of the lines in the config files.
 
- - Configuring and provisioning iTrust wasn't easy as well since we spent a lot of time setting up Tomcat and copying many configuration files but then realized setting up Tomcat wasn't absolutely necessary.
+ - Configuring and provisioning [iTrust](https://github.ncsu.edu/engr-csc326-staff/iTrust2-v2) wasn't easy as well since we spent a lot of time setting up Tomcat and copying many configuration files but then realized setting up Tomcat wasn't absolutely necessary.
