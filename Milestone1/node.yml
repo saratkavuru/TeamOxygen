@@ -43,7 +43,7 @@
         AWSSecretKey : "{{ AWSSecretKey }}"  
    
    - pause:
-       seconds: 10
+       seconds: 20
 
    - name: Refresh inventory
      meta: refresh_inventory

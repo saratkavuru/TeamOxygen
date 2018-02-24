@@ -1,5 +1,5 @@
 ---
-# Ref:
+# References:
 #
 # https://tecadmin.net/install-jenkins-in-ubuntu/
 # https://github.com/geerlingguy/ansible-role-jenkins/blob/master/handlers/main.yml
