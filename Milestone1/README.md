@@ -20,14 +20,14 @@
   - git_username
   - git_password
  - AWSAccessKeyId, AWSSecretKey are the accesskeyId and secretKey of an AWS account and git_username, git_password  are the username and password of a Github Ncsu Enterprise account.
-- Create an SSH key pair with the name DevOps with your AWS account and store the file in the [Milestone1](../master/Milestone1) directory. Make sure that this key file has read-write permissions 0400 or 0600.
-- All the variables required for [checkbox.io](https://github.com/chrisparnin/checkbox.io) are in the file [checkboxvar.yml](../master/Milestone1/checkboxvar.yml) and they can be modified as required.
-- The Node.js file [aws.js](../master/Milestone1/aws.js) should always be called with ServerName as an argument.
+- Create an SSH key pair with the name DevOps with your AWS account and store the file in the [Milestone1](../Milestone1) directory. Make sure that this key file has read-write permissions 0400 or 0600.
+- All the variables required for [checkbox.io](https://github.com/chrisparnin/checkbox.io) are in the file [checkboxvar.yml](../Milestone1/checkboxvar.yml) and they can be modified as required.
+- The Node.js file [aws.js](../Milestone1/aws.js) should always be called with ServerName as an argument.
 - The commands to run each playbook are placed as comment at the top of of each playbook.
-- The ansible-playbook [node.yml](../master/Milestone1/node.yml) is used to configure a local vm and then run aws.js to provision a remote server for Jenkins.
-- The ansible-playbook [JenkinsConfig.yml](../master/Milestone1/JenkinsConfig.yml) is used to install and configure Jenkins on a remote server. It uses files [CheckBoxBuild.yml](../master/Milestone1/CheckBoxBuild.yml) and [iTrustBuild.yml](../master/Milestone1/iTrustBuild.yml) which are parsed by the ```jenkins-job-builder``` to automate the creation of jobs for Jenkins.
-- [Checkbox.yml](../master/Milestone1/Checkbox.yml) and [iTrust.yml](../master/Milestone1/itrust.yml) are the ansible-playbooks which are executed in the post-build actions of respective Jenkins jobs to provision and configure a VM for each application.
-- The ansible-playbook [milestone1.yml](../master/Milestone1/CheckBoxBuild.yml) is an outer level playbook which executes node.yml and JenkinsConfig.yml playbook and thus automating the entire Milestone 1 to a single step.
+- The ansible-playbook [node.yml](../Milestone1/node.yml) is used to configure a local vm and then run aws.js to provision a remote server for Jenkins.
+- The ansible-playbook [JenkinsConfig.yml](../Milestone1/JenkinsConfig.yml) is used to install and configure Jenkins on a remote server. It uses files [CheckBoxBuild.yml](../Milestone1/CheckBoxBuild.yml) and [iTrustBuild.yml](../Milestone1/iTrustBuild.yml) which are parsed by the ```jenkins-job-builder``` to automate the creation of jobs for Jenkins.
+- [Checkbox.yml](../Milestone1/Checkbox.yml) and [iTrust.yml](../Milestone1/itrust.yml) are the ansible-playbooks which are executed in the post-build actions of respective Jenkins jobs to provision and configure a VM for each application.
+- The ansible-playbook [milestone1.yml](../Milestone1/CheckBoxBuild.yml) is an outer level playbook which executes node.yml and JenkinsConfig.yml playbook and thus automating the entire Milestone 1 to a single step.
 
  ### Experience:
 
