@@ -22,6 +22,17 @@ var params =
     MinCount : 1,
     MaxCount : 1,
     KeyName: 'DevOps',
+    TagSpecifications: [
+        {
+          ResourceType:  "instance" ,
+          Tags: [
+            {
+              Key: 'Name',
+              Value: ServerName
+            },
+          ]
+        },
+      ],
     
 };
 
