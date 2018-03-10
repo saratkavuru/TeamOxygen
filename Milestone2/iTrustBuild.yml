@@ -19,6 +19,7 @@
                 mv src/main/java/db.properties.template src/main/java/db.properties
                 mv src/main/resources/hibernate.properties.template src/main/resources/hibernate.properties
                 mv src/main/java/email.properties.template src/main/java/email.properties
+                cp /home/ubuntu/iTrust/pom-data.xml ./pom.xml
                 mvn clean test verify checkstyle:checkstyle
     publishers:
         - post-tasks:
