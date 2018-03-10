@@ -1,0 +1,348 @@
+---
+# References:
+#
+# https://tecadmin.net/install-jenkins-in-ubuntu/
+# https://github.com/geerlingguy/ansible-role-jenkins/blob/master/handlers/main.yml
+# https://jjasghar.github.io/blog/2016/01/03/getting-jenkins-and-jenkins-job-builder-running/
+#
+# ansible-playbook  --ask-vault-pass JenkinsConfig.yml -i inventory -vvv
+
+- hosts: Jenkins
+  become: yes
+  
+  vars:
+    - jenkins_repo_url: deb https://pkg.jenkins.io/debian binary/
+    - jenkins_repo_key_url: https://pkg.jenkins.io/debian/jenkins.io.key
+    - jenkins_pkg_url: https://pkg.jenkins.io/debian/binary
+    - jenkins_init_file: /etc/default/jenkins
+    - jenkins_http_port_param: HTTP_PORT
+    - jenkins_java_options_env_var: JAVA_ARGS
+    - jenkins_version: 2.60
+    - jenkins_package_state: present
+    - jenkins_jar_location: /opt/jenkins-cli.jar
+    - jenkins_params:
+        url_username: admin
+        url: http://{{ JenkinsDns }}:8080
+  
+  tasks:
+    - name: Install add-apt-repostory
+      apt: name=software-properties-common state=latest
+
+    - name: Add Oracle Java Repository
+      apt_repository: repo='ppa:webupd8team/java'
+
+    - name: Accept Java 8 License
+      debconf: name='oracle-java8-installer' question='shared/accepted-oracle-license-v1-1' value='true' vtype='select'
+
+    - name: install dependencies
+      apt:
+        pkg: "{{ item }}"
+        state: installed
+        update_cache: true
+        cache_valid_time: 500000
+      with_items:
+        - git
+        - oracle-java8-installer
+        - ca-certificates
+        - oracle-java8-set-default
+        - curl
+        - apt-transport-https
+        - python-pip
+        - maven
+
+    - name: Add Jenkins apt repository key.
+      apt_key:
+        url: "{{ jenkins_repo_key_url }}"
+        state: present
+
+    - name: Add Jenkins apt repository.
+      apt_repository:
+        repo: "{{ jenkins_repo_url }}"
+        state: present
+        update_cache: yes
+      when: jenkins_repo_url != ''
+
+    - name: Download specific Jenkins version.
+      get_url:
+        url: "{{ jenkins_pkg_url }}/jenkins_{{ jenkins_version }}_all.deb"
+        dest: "/tmp/jenkins_{{ jenkins_version }}_all.deb"
+      when: jenkins_version is defined
+
+    - name: Check if we downloaded a specific version of Jenkins.
+      stat:
+        path: "/tmp/jenkins_{{ jenkins_version }}_all.deb"
+      register: specific_version
+      when: jenkins_version is defined
+
+    - name: Install our specific version of Jenkins.
+      apt:
+        deb: "/tmp/jenkins_{{ jenkins_version }}_all.deb"
+        state: installed
+      when: jenkins_version is defined and specific_version.stat.exists
+
+    - name: Ensure Jenkins is installed.
+      apt:
+        name: jenkins
+        state: "{{ jenkins_package_state }}"
+
+    - name: install pip dependencies
+      pip:
+        name: 
+          - jenkins-job-builder
+
+    - name: Restart jenkins when user changes.
+      service: name=jenkins state=restarted
+        
+    - name: Add nodesource apt key
+      shell: curl -s https://deb.nodesource.com/gpgkey/nodesource.gpg.key | apt-key add -
+
+    - name: Install the nodejs LTS repos
+      apt_repository:
+        repo: deb https://deb.nodesource.com/node_9.x {{ ansible_distribution_release }} main
+        state: present
+        update_cache: yes
+
+    - name: Install nodejs and npm
+      apt:
+        pkg: "{{ item }}"
+        state: present
+        update_cache: true
+      with_items:
+       - nodejs
+
+    - name: Add ansible repository
+      apt_repository:
+        repo: ppa:ansible/ansible
+        update_cache: yes
+
+    - name: Install ansible
+      apt:
+        name: ansible   
+        state: present 
+
+    - name: Include vars from the vault
+      include_vars:
+        file: creds.yml
+      no_log: true
+
+    - name: Export AWSAccessKeyId as env variable
+      shell: export AWSAccessKeyId="{{ AWSAccessKeyId }}"
+
+    - name: Export AWSSecretKey as env variable
+      shell: export AWSSecretKey="{{ AWSSecretKey }}" 
+
+    # - name: Add Maven repository 
+    #   apt_repository:
+    #     repo: 'ppa:andrei-pozolotin/maven3'
+    #     state: present
+    #     update_cache: yes    
+
+    # - name: Purge existing Maven configuration files
+    #   apt:
+    #     name: "{{ item }}"
+    #     purge: yes
+    #     update_cache: yes
+    #   with_items:
+    #     - maven
+    #     - maven2
+    #     - maven3
+   
+    # - name: Install maven3
+    #   apt:
+    #     name: maven3
+    #     state: latest
+    #     update_cache: yes
+    
+    - include_vars:
+        file: dns.yml
+
+    - name: Get the jenkins-cli jarfile from the Jenkins server.
+      get_url:
+        url: "http://{{ JenkinsDns }}:8080/jnlpJars/jenkins-cli.jar"
+        dest: "{{ jenkins_jar_location }}"
+      register: jarfile_get
+      until: "'OK' in jarfile_get.msg or 'file already exists' in jarfile_get.msg"
+      retries: 5
+      delay: 10
+      check_mode: no
+    
+    - action: command cat /var/lib/jenkins/secrets/initialAdminPassword
+      register: out
+      changed_when: "'z' in out.stdout"
+
+    - set_fact:
+        admin_password: "{{ out.stdout_lines[0] }}"
+
+    - name: copy jenkins config
+      copy:
+        src: ./config.xml
+        dest: /var/lib/jenkins/config.xml
+
+    - name: copy DevOps.pem for checkbox
+      copy:
+        src: DevOps.pem
+        dest: /home/ubuntu/DevOps.pem
+        owner: jenkins
+        group: jenkins
+        mode: 0400
+
+    - name: create a directory for iTrust
+      file:
+        path: /home/ubuntu/iTrust
+        state: directory
+        owner: jenkins
+        group: jenkins
+        mode: 0755
+
+    - name: copy DevOps.pem for iTrust
+      copy:
+        src: DevOps.pem
+        dest: /home/ubuntu/iTrust/DevOps.pem
+        owner: jenkins
+        group: jenkins
+        mode: 0400    
+
+    - name: Copy important files onto the Jenkins server for Checkbox
+      copy:
+        src: '{{ item }}'
+        dest: '/home/ubuntu/{{ item }}'
+        owner: ubuntu
+        group: ubuntu
+        mode: 0777
+      with_items:
+        - package.json
+        - aws.js
+        - Checkbox.yml
+        - checkboxvar.yml
+
+    - name: Copy important files onto the Jenkins server for iTrust
+      copy:
+        src: '{{ item }}'
+        dest: '/home/ubuntu/iTrust/{{ item }}'
+        owner: ubuntu
+        group: ubuntu
+        mode: 0777
+      with_items:
+        - package.json
+        - aws.js
+
+    - name: Copy iTrust.yml as a template onto the Jenkins server for iTrust
+      template:
+        src: iTrust.yml
+        dest: '/home/ubuntu/iTrust/iTrust.yml' 
+        owner: ubuntu
+        group: ubuntu
+        mode: 0777
+
+    - name: Create empty inventory and dns.yml on Jenkins server for checkbox
+      copy:
+        content: ""
+        dest: '/home/ubuntu/{{ item }}'
+        force: yes
+        owner: ubuntu
+        group: ubuntu
+        mode: 0777
+      with_items:
+        - inventory
+        - dns.yml
+
+    - name: Create empty inventory and dns.yml on Jenkins server for iTrust
+      copy:
+        content: ""
+        dest: '/home/ubuntu/iTrust/{{ item }}'
+        force: yes
+        owner: ubuntu
+        group: ubuntu
+        mode: 0777
+      with_items:
+        - inventory
+        - dns.yml     
+
+    - name: Install dependencies for aws.js for checkbox
+      shell: npm install
+      args:
+        chdir: /home/ubuntu
+
+    - name: Install dependencies for aws.js for iTrust
+      shell: npm install
+      args:
+        chdir: /home/ubuntu/iTrust    
+
+    - name: "Install Jenkins git and postbuild plugins"
+      jenkins_plugin: 
+        name: "{{ item }}"
+        params: "{{ jenkins_params }}"
+        url_password: "{{ admin_password }}"
+        validate_certs: no
+      with_items:
+        - git
+        - postbuild-task
+        - build-token-root
+        - credentials-binding
+        - envinject
+
+    - name: Restart jenkins when user changes.
+      service: name=jenkins state=restarted
+
+    - name: "Wait For Jenkins To Come Up"
+      uri:
+        url: "http://{{ JenkinsDns }}:8080/cli/"
+        status_code: 403
+      register: result
+      until: result.status == 403
+      retries: 10
+      delay: 5
+
+    - name: Copy checkbox build file to jenkins server
+      template:
+        src: CheckBoxBuild.yml
+        dest: /home/ubuntu/CheckBoxBuild.yml
+    
+    - name: Copy iTrust build file to jenkins server
+      template:
+        src: iTrustBuild.yml
+        dest: /home/ubuntu/iTrust/iTrustBuild.yml
+
+    - name: jenkins job builder configuration
+      action: template src="./jenkins_jobs.ini" dest="/home/ubuntu/jenkins_jobs.ini" owner=root group=root mode=0600
+  
+    - name: Create checkbox job using jjb
+      command: jenkins-jobs --conf /home/ubuntu/jenkins_jobs.ini update /home/ubuntu/CheckBoxBuild.yml
+      
+    - name: Create iTrust job using jjb
+      command: jenkins-jobs --conf /home/ubuntu/jenkins_jobs.ini update /home/ubuntu/iTrust/iTrustBuild.yml
+      environment:
+        git_username: "{{ git_username }}"
+        git_password: "{{ git_password }}"
+
+    - name: Run a checkbox build
+      shell: curl -v http://{{ JenkinsDns }}:8080/buildByToken/build?job=checkbox\&token=8fc61f12b36588bf13393a30a6af61e6
+    
+    - name: Run a iTrust build
+      shell: curl -v http://{{ JenkinsDns }}:8080/buildByToken/build?job=iTrust\&token=8fc61f12b36588bf13393a30a6af61e6
+    
+    # Rest are for iTrust in Jenkins
+    - name: Install python-mysqldb
+      apt: name=python-mysqldb state=present
+      become: true
+    
+    - name: Install sql-server
+      apt: name=mysql-server state=present
+      become: true
+    
+    - name: To accept lower case table names in mysql
+      lineinfile:
+        path: /etc/mysql/my.cnf
+        regexp: "skip-external-locking"
+        insertafter: "skip-external-locking"
+        line: "lower_case_table_names=1"
+      become: true
+    
+    - name: restart mysql
+      shell: sudo service mysql restart
+    
+    - name: wait for my-sql to start
+      wait_for: port=3306
+      become: true
+
+...

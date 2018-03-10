@@ -1,0 +1,6 @@
+MONGO_USER: admin
+MONGO_PASSWORD: password
+MONGO_PORT: 3002
+MAIL_USER: admin
+MAIL_PASSWORD: password
+MAIL_SMTP: smtp.gmail.com

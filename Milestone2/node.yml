@@ -1,0 +1,50 @@
+---
+
+# ansible-playbook --ask-vault-pass node.yml -v
+
+- hosts: localhost
+  become: yes
+
+  tasks: 
+   - name: Install nodejs and npm
+     apt:
+       pkg: "{{ item }}"
+       state: installed
+       update_cache: true
+     with_items:
+       - nodejs-legacy
+       - npm
+     ignore_errors: yes
+   
+   - name: Include vars from the vault
+     include_vars:
+       file: creds.yml
+     no_log: true
+   
+   - name: Install the dependencies for aws.js
+     command: npm install
+     args:
+       chdir: /home/vagrant/Project/Milestone2
+
+   - name: Delete inventory and dns.json file
+     file: 
+       path: "{{ item }}"
+       state: absent
+     with_items:
+       - inventory
+       - dns.yml
+
+   -  name: Run aws.js for Jenkins
+      command: node aws.js Jenkins
+      args:
+        chdir:  /home/vagrant/Project/Milestone2
+      environment:
+        AWSAccessKeyId : "{{ AWSAccessKeyId }}"
+        AWSSecretKey : "{{ AWSSecretKey }}"  
+   
+   - pause:
+       seconds: 20
+
+   - name: Refresh inventory
+     meta: refresh_inventory
+...     

@@ -1,0 +1,39 @@
+#https://docs.openstack.org/infra/jenkins-job-builder/publishers.html#publishers.post-tasks
+
+- job:
+    name: iTrust
+    project-type: freestyle
+    description: 'iTrust'
+    retry-count: 3
+    auth-token: 8fc61f12b36588bf13393a30a6af61e6
+    wrappers:
+      - inject:
+            properties-content: |
+                username = {{ git_username }}
+                password = {{ git_password }}
+    builders:
+        - shell: |
+                rm -rfd iTrust2-v2
+                git clone https://$username:$password@github.ncsu.edu/engr-csc326-staff/iTrust2-v2
+                cd iTrust2-v2/iTrust2
+                mv src/main/java/db.properties.template src/main/java/db.properties
+                mv src/main/resources/hibernate.properties.template src/main/resources/hibernate.properties
+                mv src/main/java/email.properties.template src/main/java/email.properties
+                mvn clean test verify checkstyle:checkstyle
+    publishers:
+        - post-tasks:
+            - matches:
+                - log-text:
+                  operator: AND
+              escalate-status: false
+              run-if-job-successful: true
+              script: |
+                cd /home/ubuntu/iTrust
+                export AWSAccessKeyId={{ AWSAccessKeyId }}
+                export AWSSecretKey={{ AWSSecretKey }}
+                echo "" > inventory
+                echo "" > dns.yml
+                nodejs aws.js iTrust
+                sleep 45s
+                ansible-playbook iTrust.yml -i inventory -vvv
+                
