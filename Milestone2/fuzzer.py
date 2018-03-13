@@ -25,48 +25,48 @@ def fuzzing():
 
 		f = open(file_name, 'r')
 		lines = f.readlines()
-		lt = random.randint(1,1001)
+		prob = random.randint(1,1001)
 		lines1 = lines
 		lines2 = []
 		for line in lines:
 				
 			if(re.match('(.*)if(.*)',line) is not None or re.match('(.*)while(.*)',line) is not None):
 				if(re.match('(.*)<(.*)',line) is not None ):
-					if(lt < 125):
+					if(prob < 125):
 						line = re.sub('<','>',line)
 						# print(line)
 
 			if(re.match('(.*)if(.*)',line) is not None or re.match('(.*)while(.*)',line) is not None):
 				if(re.match('(.*)>(.*)',line) is not None):
-					if(lt >= 125 and lt < 250):
+					if(prob >= 125 and prob < 250):
 						line = re.sub('>','<',line)
 						# print(line)
 
 			if(re.match('(.*)if(.*)',line) is not None or re.match('(.*)while(.*)',line) is not None):
 				if(re.match('(.*)==(.*)',line) is not None):
-					if(lt >= 250 and lt < 375):
+					if(prob >= 250 and prob < 375):
 						line = re.sub('==','!=',line)
 						# print(line)
 
 			if(re.match('(.*)if(.*)',line) is not None or re.match('(.*)while(.*)',line) is not None):
 				if(re.match('(.*)!=(.*)',line) is not None):
-					if(lt >= 375 and lt < 500):
+					if(prob >= 375 and prob < 500):
 						line = re.sub('!=','==',line)
 						# print(line)
 
 			if(re.match('(.*) 0(.*)',line) is not None) and (re.match('(.*)if(.*)',line) is not None or re.match('(.*)while(.*)',line) is not None):
-				if(lt >= 500 and lt < 625):
+				if(prob >= 500 and prob < 625):
 					line = re.sub(' 0',' 1',line)
 					# print(line)
 	
 			if(re.match('(.*) 1(.*)',line) is not None) and (re.match('(.*)if(.*)',line) is not None or re.match('(.*)while(.*)',line) is not None):
-				if(lt >= 625 and lt < 700):
+				if(prob >= 625 and prob < 700):
 					line = re.sub(' 1',' 0',line)
 					# print(line)
  	                        
 			if(re.match('.*\"(.*)\".*',line) is not None) and (re.match('\".*\\.*\"',line) is not None) and (re.match('\".*@.*\"',line) is not None):
 				# print line,"\n"
-				if(lt >= 700 and lt <= 1001):
+				if(prob >= 700 and prob <= 1001):
 					match = re.search(".*(\".*\").*",line)
 					line = line.replace(match.group(1),"\"ThisISRanDOm\"")
 					print(line)
