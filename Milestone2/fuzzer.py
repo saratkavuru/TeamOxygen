@@ -16,7 +16,7 @@ sha1 = ""
 
 def fuzzing():
 	files = []
-	dir_name = "/Users/tanmaygoel/devops"
+	dir_name = "/home/ubuntu"
 	print dir_name
 	pdb.set_trace()
 	for root, dirnames, filenames in os.walk(dir_name):
