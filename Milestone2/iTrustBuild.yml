@@ -13,12 +13,13 @@
                 password = {{ git_password }}
     builders:
         - shell: |
-                rm -rfd iTrust2-v2
-                git clone https://$username:$password@github.ncsu.edu/engr-csc326-staff/iTrust2-v2
+                if [ ! -d "/home/ubuntu/iTrust2-v2" ] ; then
+                    git clone "https://$username:$password@github.ncsu.edu/engr-csc326-staff/iTrust2-v2"
+                fi
                 cd iTrust2-v2/iTrust2
-                mv src/main/java/db.properties.template src/main/java/db.properties
-                mv src/main/resources/hibernate.properties.template src/main/resources/hibernate.properties
-                mv src/main/java/email.properties.template src/main/java/email.properties
+                cp src/main/java/db.properties.template src/main/java/db.properties
+                cp src/main/resources/hibernate.properties.template src/main/resources/hibernate.properties
+                cp src/main/java/email.properties.template src/main/java/email.properties
                 cp /home/ubuntu/iTrust/pom-data.xml ./pom.xml
                 mvn clean test verify checkstyle:checkstyle
     # publishers:

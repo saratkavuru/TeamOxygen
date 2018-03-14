@@ -5,7 +5,6 @@ import random
 import requests
 import time
 import subprocess
-import pdb
 # from useless_iteration import useless
 
 passing = []
@@ -16,9 +15,8 @@ sha1 = ""
 
 def fuzzing():
 	files = []
-	dir_name = "/home/ubuntu"
-	print dir_name
-	pdb.set_trace()
+	dir_name = "/home/ubuntu/iTrust2-v2"
+	print(dir_name)
 	for root, dirnames, filenames in os.walk(dir_name):
 		for filename in fnmatch.filter(filenames, '*.java'):
 			if "model" in root or "mysql" in root or "test" in root or "AddApptRequestAction.java" in filename:
@@ -87,7 +85,8 @@ def gitCommit(i):
 	print(sha1)
 
 def jenkins():
-	pas = os.popen('cat /var/lib/jenkins/secrets/initialAdminPassword').read().strip()
+	pas = os.popen('sudo cat /var/lib/jenkins/secrets/initialAdminPassword').read().strip()
+	requests.get("http://127.0.0.1:8080/buildByToken/build?job=iTrust&token=8fc61f12b36588bf13393a30a6af61e6")
 	response = requests.get('http://127.0.0.1:8080/job/iTrust/api/json',auth=('admin', pas))
 	data = response.json()
 	buildNumber = data['nextBuildNumber']
@@ -103,9 +102,10 @@ def jenkins():
 			break
 		except ValueError:
 			#print data
+			# break
 			continue
-	print "-----------------------------------"
-	print data
+	print("-----------------------------------")
+	print(data)
 	return buildNumber
 
 
@@ -119,7 +119,7 @@ def revertcommit():
 	os.system(command)
 
 def main():
-	for i in range(2):
+	for i in range(1):
 		builds = []
 		# dir_name = os.path.dirname(os.path.dirname(os.path.dirname(os.path.realpath(__file__))))
 		command = 'cd /home/ubuntu/iTrust2-v2 && git checkout -B fuzzer'
