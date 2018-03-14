@@ -206,7 +206,6 @@
         - aws.js
         - pom-data.xml
         - fuzzer.py
-        - requirements.txt 
 
     - name: Copy iTrust.yml as a template onto the Jenkins server for iTrust
       template:
