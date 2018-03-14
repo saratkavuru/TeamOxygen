@@ -89,6 +89,7 @@
       pip:
         name: 
           - jenkins-job-builder
+          - requests
 
     - name: Restart jenkins when user changes.
       service: name=jenkins state=restarted
@@ -156,13 +157,13 @@
         src: ./config.xml
         dest: /var/lib/jenkins/config.xml
 
-    - name: copy DevOps.pem for checkbox
-      copy:
-        src: DevOps.pem
-        dest: /home/ubuntu/DevOps.pem
-        owner: jenkins
-        group: jenkins
-        mode: 0400
+    # - name: copy DevOps.pem for checkbox
+    #   copy:
+    #     src: DevOps.pem
+    #     dest: /home/ubuntu/DevOps.pem
+    #     owner: jenkins
+    #     group: jenkins
+    #     mode: 0400
 
     - name: create a directory for iTrust
       file:
@@ -180,18 +181,18 @@
         group: jenkins
         mode: 0400    
 
-    - name: Copy important files onto the Jenkins server for Checkbox
-      copy:
-        src: '{{ item }}'
-        dest: '/home/ubuntu/{{ item }}'
-        owner: ubuntu
-        group: ubuntu
-        mode: 0777
-      with_items:
-        - package.json
-        - aws.js
-        - Checkbox.yml
-        - checkboxvar.yml
+    # - name: Copy important files onto the Jenkins server for Checkbox
+    #   copy:
+    #     src: '{{ item }}'
+    #     dest: '/home/ubuntu/{{ item }}'
+    #     owner: ubuntu
+    #     group: ubuntu
+    #     mode: 0777
+    #   with_items:
+    #     - package.json
+    #     - aws.js
+    #     - Checkbox.yml
+    #     - checkboxvar.yml
 
     - name: Copy important files onto the Jenkins server for iTrust
       copy:
@@ -204,6 +205,8 @@
         - package.json
         - aws.js
         - pom-data.xml
+        - fuzzer.py
+        - requirements.txt 
 
     - name: Copy iTrust.yml as a template onto the Jenkins server for iTrust
       template:
@@ -213,17 +216,17 @@
         group: ubuntu
         mode: 0777
 
-    - name: Create empty inventory and dns.yml on Jenkins server for checkbox
-      copy:
-        content: ""
-        dest: '/home/ubuntu/{{ item }}'
-        force: yes
-        owner: ubuntu
-        group: ubuntu
-        mode: 0777
-      with_items:
-        - inventory
-        - dns.yml
+    # - name: Create empty inventory and dns.yml on Jenkins server for checkbox
+    #   copy:
+    #     content: ""
+    #     dest: '/home/ubuntu/{{ item }}'
+    #     force: yes
+    #     owner: ubuntu
+    #     group: ubuntu
+    #     mode: 0777
+    #   with_items:
+    #     - inventory
+    #     - dns.yml
 
     - name: Create empty inventory and dns.yml on Jenkins server for iTrust
       copy:
@@ -235,12 +238,12 @@
         mode: 0777
       with_items:
         - inventory
-        - dns.yml     
+        - dns.yml        
 
-    - name: Install dependencies for aws.js for checkbox
-      shell: npm install
-      args:
-        chdir: /home/ubuntu
+    # - name: Install dependencies for aws.js for checkbox
+    #   shell: npm install
+    #   args:
+    #     chdir: /home/ubuntu
 
     - name: Install dependencies for aws.js for iTrust
       shell: npm install
@@ -272,10 +275,10 @@
       retries: 10
       delay: 5
 
-    - name: Copy checkbox build file to jenkins server
-      template:
-        src: CheckBoxBuild.yml
-        dest: /home/ubuntu/CheckBoxBuild.yml
+    # - name: Copy checkbox build file to jenkins server
+    #   template:
+    #     src: CheckBoxBuild.yml
+    #     dest: /home/ubuntu/CheckBoxBuild.yml
     
     - name: Copy iTrust build file to jenkins server
       template:
@@ -285,8 +288,8 @@
     - name: jenkins job builder configuration
       action: template src="./jenkins_jobs.ini" dest="/home/ubuntu/jenkins_jobs.ini" owner=root group=root mode=0600
   
-    - name: Create checkbox job using jjb
-      command: jenkins-jobs --conf /home/ubuntu/jenkins_jobs.ini update /home/ubuntu/CheckBoxBuild.yml
+    # - name: Create checkbox job using jjb
+    #   command: jenkins-jobs --conf /home/ubuntu/jenkins_jobs.ini update /home/ubuntu/CheckBoxBuild.yml
       
     - name: Create iTrust job using jjb
       command: jenkins-jobs --conf /home/ubuntu/jenkins_jobs.ini update /home/ubuntu/iTrust/iTrustBuild.yml
@@ -294,10 +297,13 @@
         git_username: "{{ git_username }}"
         git_password: "{{ git_password }}"
 
-    - name: Run a checkbox build
-      shell: curl -v http://{{ JenkinsDns }}:8080/buildByToken/build?job=checkbox\&token=8fc61f12b36588bf13393a30a6af61e6
+    # - name: Run a checkbox build
+    #   shell: curl -v http://{{ JenkinsDns }}:8080/buildByToken/build?job=checkbox\&token=8fc61f12b36588bf13393a30a6af61e6
     
    # Rest are for iTrust in Jenkins
+    - name: Cloning iTrust repo
+      shell: rm -rfd iTrust2-v2 && git clone https://{{ git_username }}:{{ git_password }}@github.ncsu.edu/engr-csc326-staff/iTrust2-v2
+
     - name: Install python-mysqldb
       apt: name=python-mysqldb state=present
       become: true
@@ -321,7 +327,10 @@
       wait_for: port=3306
       become: true
 
-    - name: Run a iTrust build
-      shell: curl -v http://{{ JenkinsDns }}:8080/buildByToken/build?job=iTrust\&token=8fc61f12b36588bf13393a30a6af61e6
+    - name: Run the python script
+      shell: python /home/ubuntu/iTrust/fuzzer.py
+
+    # - name: Run a iTrust build
+    #   shell: curl -v http://{{ JenkinsDns }}:8080/buildByToken/build?job=iTrust\&token=8fc61f12b36588bf13393a30a6af61e6
         
 ...
