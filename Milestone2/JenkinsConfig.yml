@@ -301,9 +301,6 @@
     #   shell: curl -v http://{{ JenkinsDns }}:8080/buildByToken/build?job=checkbox\&token=8fc61f12b36588bf13393a30a6af61e6
     
    # Rest are for iTrust in Jenkins
-    - name: Cloning iTrust repo
-      shell: rm -rfd iTrust2-v2 && git clone https://{{ git_username }}:{{ git_password }}@github.ncsu.edu/engr-csc326-staff/iTrust2-v2
-
     - name: Install python-mysqldb
       apt: name=python-mysqldb state=present
       become: true

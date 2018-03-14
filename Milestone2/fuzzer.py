@@ -22,13 +22,14 @@ def fuzzing():
 			if "model" in root or "mysql" in root or "test" in root or "AddApptRequestAction.java" in filename:
 				continue
 			files.append(os.path.join(root, filename))
+	
+	prob = random.randint(1,1001)
 	for file_name in files:
 
 		f = open(file_name, 'r')
 		lines = f.readlines()
 		lines1 = lines
 		lines2 = []
-		prob = random.randint(1,1001)
 
 		for line in lines:
 			if(re.match('(.*)<(.*)',line) is not None ):
@@ -67,7 +68,7 @@ def fuzzing():
 					# print " MATCHED STRING"
 					match = matches=re.findall(r'\"(.+?)\"',line)
 					line = line.replace(match[0], "NEQ - " + match[0])
-					print(line)
+					# print(line)
 
 			lines2.append(line)
 
