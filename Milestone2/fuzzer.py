@@ -89,31 +89,31 @@ def gitCommit(i):
 	sha1 = os.popen('git rev-parse HEAD').read()
 	print(sha1)
 
-# def jenkins():
-# 	pas = os.popen('cat /var/lib/jenkins/secrets/initialAdminPassword').read().strip()
-#     response = requests.get('http://127.0.0.1:8080/job/itrust_job2/api/json',auth=('admin', pass))
-# 	data = response.json()
-#     buildNumber = data['nextBuildNumber']
-# 	#time.sleep(5)
-# 	while True:
-# 		#print 'http://159.203.180.176:8080/job/itrust_job2/' + str(buildNumber)  + '/api/json'
-# 		try:
-# 			response = requests.get('http://127.0.0.1:8080/job/itrust_job2/' + str(buildNumber)  + '/api/json',
-# 								auth=('admin', pass))
-# 			data = response.json()
-#
-# 			if data['building'] != False:
-# 				time.sleep(5)
-# 				continue
-# 			break
-#
-# 		except ValueError:
-# 			#print data
-# 			continue
-#
-# 	print "-----------------------------------"
-# 	print data
-# 	return buildNumber
+def jenkins():
+	pas = os.popen('cat /var/lib/jenkins/secrets/initialAdminPassword').read().strip()
+    response = requests.get('http://127.0.0.1:8080/job/iTrust/api/json',auth=('admin', pass))
+	data = response.json()
+    buildNumber = data['nextBuildNumber']
+	#time.sleep(5)
+	while True:
+		#print 'http://159.203.180.176:8080/job/itrust_job2/' + str(buildNumber)  + '/api/json'
+		try:
+			response = requests.get('http://127.0.0.1:8080/job/iTrust/' + str(buildNumber)  + '/api/json',
+								auth=('admin', pass))
+			data = response.json()
+
+			if data['building'] != False:
+				time.sleep(5)
+				continue
+			break
+
+		except ValueError:
+			#print data
+			continue
+
+	print "-----------------------------------"
+	print data
+	return buildNumber
 
 
 def revertcommit():
@@ -133,7 +133,7 @@ def main():
 		os.system(command)
 		fuzzing()
 		gitCommit(i)
-		# jenkins()
+		jenkins()
 		revertcommit()
 		# builds.append(revertcommit(sha1))
 		# val = (builds)
