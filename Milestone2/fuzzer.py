@@ -16,7 +16,8 @@ sha1 = ""
 
 def fuzzing():
 	files = []
-	# dir_name = os.path.dirname(os.path.dirname(os.path.dirname(os.path.realpath(__file__))))
+	dir_name = "/Users/tanmaygoel/devops"
+	print dir_name
 	pdb.set_trace()
 	for root, dirnames, filenames in os.walk(dir_name):
 		for filename in fnmatch.filter(filenames, '*.java'):
@@ -32,46 +33,42 @@ def fuzzing():
 		prob = random.randint(1,1001)
 
 		for line in lines:
-			if(re.match('(.*)if(.*)',line) is not None or re.match('(.*)while(.*)',line) is not None):
-				if(re.match('(.*)<(.*)',line) is not None ):
+			if(re.match('(.*)<(.*)',line) is not None ):
 					if(prob < 125):
 						line = re.sub('<','>',line)
 						# print(line)
 
-			if(re.match('(.*)if(.*)',line) is not None or re.match('(.*)while(.*)',line) is not None):
-				if(re.match('(.*)>(.*)',line) is not None):
+			if(re.match('(.*)>(.*)',line) is not None):
 					if(prob >= 125 and prob < 250):
 						line = re.sub('>','<',line)
 						# print(line)
 
-			if(re.match('(.*)if(.*)',line) is not None or re.match('(.*)while(.*)',line) is not None):
-				if(re.match('(.*)==(.*)',line) is not None):
+			if(re.match('(.*)==(.*)',line) is not None):
 					if(prob >= 250 and prob < 375):
 						line = re.sub('==','!=',line)
 						# print(line)
 
-			if(re.match('(.*)if(.*)',line) is not None or re.match('(.*)while(.*)',line) is not None):
-				if(re.match('(.*)!=(.*)',line) is not None):
+			if(re.match('(.*)!=(.*)',line) is not None):
 					if(prob >= 375 and prob < 500):
 						line = re.sub('!=','==',line)
 						# print(line)
 
-			if(re.match('(.*) 0(.*)',line) is not None) and (re.match('(.*)if(.*)',line) is not None or re.match('(.*)while(.*)',line) is not None):
+			if re.match('(.*) 0(.*)',line) is not None:
 				if(prob >= 500 and prob < 625):
 					line = re.sub(' 0',' 1',line)
 					# print(line)
 
-			if(re.match('(.*) 1(.*)',line) is not None) and (re.match('(.*)if(.*)',line) is not None or re.match('(.*)while(.*)',line) is not None):
+			if re.match('(.*) 1(.*)',line) is not None:
 				if(prob >= 625 and prob < 700):
 					line = re.sub(' 1',' 0',line)
 					# print(line)
 
-			if re.findall(r'\"(.+?)\"',line):
+			if re.findall(r'\"(.+?)\"',line) and not line.strip().startswith('@'):
 				# print line,"\n"
 				if(prob >= 700 and prob <= 1001):
 					# print " MATCHED STRING"
 					match = matches=re.findall(r'\"(.+?)\"',line)
-					line = line.replace(match[0],"ThisISRanDOm")
+					line = line.replace(match[0], "NEQ - " + match[0])
 					print(line)
 
 			lines2.append(line)
@@ -91,26 +88,22 @@ def gitCommit(i):
 
 def jenkins():
 	pas = os.popen('cat /var/lib/jenkins/secrets/initialAdminPassword').read().strip()
-    response = requests.get('http://127.0.0.1:8080/job/iTrust/api/json',auth=('admin', pass))
+	response = requests.get('http://127.0.0.1:8080/job/iTrust/api/json',auth=('admin', pas))
 	data = response.json()
-    buildNumber = data['nextBuildNumber']
+	buildNumber = data['nextBuildNumber']
 	#time.sleep(5)
 	while True:
 		#print 'http://159.203.180.176:8080/job/itrust_job2/' + str(buildNumber)  + '/api/json'
 		try:
-			response = requests.get('http://127.0.0.1:8080/job/iTrust/' + str(buildNumber)  + '/api/json',
-								auth=('admin', pass))
+			response = requests.get('http://127.0.0.1:8080/job/iTrust/' + str(buildNumber)  + '/api/json', auth=('admin', pas))
 			data = response.json()
-
 			if data['building'] != False:
 				time.sleep(5)
 				continue
 			break
-
 		except ValueError:
 			#print data
 			continue
-
 	print "-----------------------------------"
 	print data
 	return buildNumber
