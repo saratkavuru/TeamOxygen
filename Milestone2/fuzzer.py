@@ -15,7 +15,7 @@ sha1 = ""
 
 def fuzzing():
 	files = []
-	dir_name = "/home/ubuntu/iTrust2-v2"
+	dir_name = "/var/lib/jenkins/jobs/iTrust/workspace/iTrust2-v2"
 	print(dir_name)
 	for root, dirnames, filenames in os.walk(dir_name):
 		for filename in fnmatch.filter(filenames, '*.java'):
@@ -32,42 +32,42 @@ def fuzzing():
 		lines2 = []
 
 		for line in lines:
-			if(re.match('(.*)<(.*)',line) is not None ):
+			if((re.match('(.*)if(.*)',line) is not None or re.match('(.*)while(.*)',line) is not None ) and re.match('(.*)<(.*)',line) is not None and re.match('.*<.+>.*',line) is None):
 					if(prob < 125):
 						line = re.sub('<','>',line)
 						# print(line)
 
-			if(re.match('(.*)>(.*)',line) is not None):
+			if((re.match('(.*)if(.*)',line) is not None or re.match('(.*)while(.*)',line) is not None ) and re.match('(.*)>(.*)',line) is not None):
 					if(prob >= 125 and prob < 250):
 						line = re.sub('>','<',line)
 						# print(line)
 
-			if(re.match('(.*)==(.*)',line) is not None):
+			if((re.match('(.*)if(.*)',line) is not None or re.match('(.*)while(.*)',line) is not None ) and re.match('(.*)==(.*)',line) is not None):
 					if(prob >= 250 and prob < 375):
 						line = re.sub('==','!=',line)
 						# print(line)
 
-			if(re.match('(.*)!=(.*)',line) is not None):
+			if((re.match('(.*)if(.*)',line) is not None or re.match('(.*)while(.*)',line) is not None ) and re.match('(.*)!=(.*)',line) is not None):
 					if(prob >= 375 and prob < 500):
 						line = re.sub('!=','==',line)
 						# print(line)
 
-			if re.match('(.*) 0(.*)',line) is not None:
+			if ((re.match('(.*)if(.*)',line) is not None or re.match('(.*)while(.*)',line) is not None ) and re.match('(.*) 0(.*)',line) is not None):
 				if(prob >= 500 and prob < 625):
 					line = re.sub(' 0',' 1',line)
 					# print(line)
 
-			if re.match('(.*) 1(.*)',line) is not None:
+			if ((re.match('(.*)if(.*)',line) is not None or re.match('(.*)while(.*)',line) is not None ) and re.match('(.*) 1(.*)',line) is not None):
 				if(prob >= 625 and prob < 700):
 					line = re.sub(' 1',' 0',line)
 					# print(line)
 
-			if re.findall(r'\"(.+?)\"',line) and not line.strip().startswith('@'):
-				# print line,"\n"
-				if(prob >= 700 and prob <= 1001):
-					# print " MATCHED STRING"
-					match = matches=re.findall(r'\"(.+?)\"',line)
-					line = line.replace(match[0], "NEQ - " + match[0])
+			# if re.findall(r'\"(.+?)\"',line) and not line.strip().startswith('@'):
+			# 	# print line,"\n"
+			# 	if(prob >= 700 and prob <= 1001):
+			# 		# print " MATCHED STRING"
+			# 		match = matches=re.findall(r'\"(.+?)\"',line)
+			# 		line = line.replace(match[0], "NEQ - " + match[0])
 					# print(line)
 
 			lines2.append(line)
@@ -80,7 +80,7 @@ def fuzzing():
 
 def gitCommit(i):
 	# dir_name = os.path.dirname(os.path.dirname(os.path.dirname(os.path.realpath(__file__))))
-	command = 'cd  /home/ubuntu/iTrust2-v2 && git add --all . && git commit -am "fuzzing commit '+str(i)+'"'
+	command = 'cd  /var/lib/jenkins/jobs/iTrust/workspace/iTrust2-v2 && git add --all . && git commit -am "fuzzing commit '+str(i)+'"'
 	os.system(command)
 	sha1 = os.popen('git rev-parse HEAD').read()
 	print(sha1)
@@ -116,14 +116,14 @@ def revertcommit():
 	TODO : Maybe there is no commit.
 	"""
 	# dir_name = os.path.dirname(os.path.dirname(os.path.dirname(os.path.realpath(__file__))))
-	command = 'cd /home/ubuntu/iTrust2-v2 && git checkout master && git branch -D fuzzer'
+	command = 'cd /var/lib/jenkins/jobs/iTrust/workspace/iTrust2-v2 && git checkout master && git branch -D fuzzer'
 	os.system(command)
 
 def main():
-	for i in range(1):
+	for i in range(2):
 		builds = []
 		# dir_name = os.path.dirname(os.path.dirname(os.path.dirname(os.path.realpath(__file__))))
-		command = 'cd /home/ubuntu/iTrust2-v2 && git checkout -B fuzzer'
+		command = 'cd /var/lib/jenkins/jobs/iTrust/workspace/iTrust2-v2 && git checkout -B fuzzer'
 		os.system(command)
 		fuzzing()
 		gitCommit(i)
