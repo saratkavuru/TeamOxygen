@@ -17,7 +17,7 @@ def fuzzing():
 			if "model" in root or "mysql" in root or "test" in root or "AddApptRequestAction.java" or "EmailUtil.java" in filename:
 				continue
 			files.append(os.path.join(root, filename))
-	
+
 	prob = random.randint(1,1001)
 	for file_name in files:
 
@@ -27,7 +27,7 @@ def fuzzing():
 		lines2 = []
 
 		for line in lines:
-			if((re.match('(.*)if(.*)',line) is not None or re.match('(.*)while(.*)',line) is not None ) and re.match('(.*)<(.*)',line) is not None and re.match('.*<.+>.*',line) is None):
+			if ('if in line' or 'while in line' ) and '<' not in line and '>' not in line:
 					if(prob < 125):
 						line = re.sub('<','>',line)
 						# print(line)
@@ -132,7 +132,7 @@ def main():
 		buildNumber = jenkins()
 		revertcommit()
 		failTestCount = failTestCount + testPriortization(buildNumber)
-	
+
 	testList.sort(key=lambda x: x[1])
 	print(testList)
 	print("Number of test cases failed ", str(failTestCount))
