@@ -5,11 +5,6 @@ import random
 import requests
 import time
 import subprocess
-# from useless_iteration import useless
-
-passing = []
-
-#from git import Repo
 
 sha1 = ""
 
@@ -19,7 +14,7 @@ def fuzzing():
 	print(dir_name)
 	for root, dirnames, filenames in os.walk(dir_name):
 		for filename in fnmatch.filter(filenames, '*.java'):
-			if "model" in root or "mysql" in root or "test" in root or "AddApptRequestAction.java" in filename:
+			if "model" in root or "mysql" in root or "test" in root or "AddApptRequestAction.java" or "EmailUtil.java" in filename:
 				continue
 			files.append(os.path.join(root, filename))
 	
@@ -72,18 +67,14 @@ def fuzzing():
 
 			lines2.append(line)
 
-		#os.system('chmod 777 ' + file_name)
 		fout = open(file_name,'w')
 		for l in lines2:
 			fout.write(l)
-		# print(file_name)
 
 def gitCommit(i):
-	# dir_name = os.path.dirname(os.path.dirname(os.path.dirname(os.path.realpath(__file__))))
 	command = 'cd  /var/lib/jenkins/jobs/iTrust/workspace/iTrust2-v2 && git add --all . && git commit -am "fuzzing commit '+str(i)+'"'
 	os.system(command)
 	sha1 = os.popen('git rev-parse HEAD').read()
-	print(sha1)
 
 def jenkins():
 	pas = os.popen('sudo cat /var/lib/jenkins/secrets/initialAdminPassword').read().strip()
@@ -91,9 +82,7 @@ def jenkins():
 	response = requests.get('http://127.0.0.1:8080/job/iTrust/api/json',auth=('admin', pas))
 	data = response.json()
 	buildNumber = data['nextBuildNumber']
-	#time.sleep(5)
 	while True:
-		#print 'http://159.203.180.176:8080/job/itrust_job2/' + str(buildNumber)  + '/api/json'
 		try:
 			response = requests.get('http://127.0.0.1:8080/job/iTrust/' + str(buildNumber)  + '/api/json', auth=('admin', pas))
 			data = response.json()
@@ -102,38 +91,51 @@ def jenkins():
 				continue
 			break
 		except ValueError:
-			#print data
-			# break
 			continue
-	print("-----------------------------------")
-	print(data)
 	return buildNumber
-
 
 def revertcommit():
 	""" revert the fuzzing commit
 	Checks out the master branch and deletes the fuzzer branch
 	TODO : Maybe there is no commit.
 	"""
-	# dir_name = os.path.dirname(os.path.dirname(os.path.dirname(os.path.realpath(__file__))))
 	command = 'cd /var/lib/jenkins/jobs/iTrust/workspace/iTrust2-v2 && git checkout master && git branch -D fuzzer'
 	os.system(command)
 
+testList = []
+def testPriortization(buildNumber):
+	failTestCount = 0
+	with open('/var/lib/jenkins/jobs/iTrust/builds/'+str(buildNumber)+'/log', 'r') as logfile:
+		for cnt, line in enumerate(logfile):
+			failed = False
+			test = re.search(" FAILURE! - in",line)
+			if test:
+				failTestCount = failTestCount + 1
+				failed = True
+			test = re.search("Tests run: (\d+), .*- in (.*)\n",line)
+			if test:
+				testName = line[line.index(" - in ")+6:len(line)-1]
+				time = float(line[line.index("Time elapsed: ")+14:line.index(" s")])
+				if failed:
+					testList.append((testName, time, "Failed"))
+				else:
+					testList.append((testName, time, "Passed"))
+	return failTestCount
+
 def main():
+	failTestCount = 0
 	for i in range(2):
-		builds = []
-		# dir_name = os.path.dirname(os.path.dirname(os.path.dirname(os.path.realpath(__file__))))
 		command = 'cd /var/lib/jenkins/jobs/iTrust/workspace/iTrust2-v2 && git checkout -B fuzzer'
 		os.system(command)
 		fuzzing()
 		gitCommit(i)
-		jenkins()
+		buildNumber = jenkins()
 		revertcommit()
-		# builds.append(revertcommit(sha1))
-		# val = (builds)
-		# passing.append(val)
-		# print passing
-	#print builds
+		failTestCount = failTestCount + testPriortization(buildNumber)
+	
+	testList.sort(key=lambda x: x[1])
+	print(testList)
+	print("Number of test cases failed ", str(failTestCount))
 
 if __name__ == "__main__":
 	main()
