@@ -85,11 +85,17 @@
         name: jenkins
         state: "{{ jenkins_package_state }}"
 
+    # - name: upgrade pip
+    #   pip:
+    #     name: pip
+    #     extra_args: --upgrade
+
     - name: install pip dependencies
       pip:
-        name: 
-          - jenkins-job-builder
-          - requests
+        name: "{{ item }}" 
+      with_items:
+        - jenkins-job-builder
+        - requests
 
     - name: Restart jenkins when user changes.
       service: name=jenkins state=restarted
@@ -261,6 +267,7 @@
         - build-token-root
         - credentials-binding
         - envinject
+        - jacoco
 
     - name: Restart jenkins when user changes.
       service: name=jenkins state=restarted
