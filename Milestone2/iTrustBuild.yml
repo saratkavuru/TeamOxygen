@@ -25,20 +25,26 @@
                 fi
                 cd /var/lib/jenkins/jobs/iTrust/workspace/iTrust2-v2/iTrust2
                 mvn clean test verify checkstyle:checkstyle
-    # publishers:
-    #     - post-tasks:
-    #         - matches:
-    #             - log-text:
-    #               operator: AND
-    #           escalate-status: false
-    #           run-if-job-successful: true
-    #           script: |
-    #             cd /home/ubuntu/iTrust
-    #             export AWSAccessKeyId={{ AWSAccessKeyId }}
-    #             export AWSSecretKey={{ AWSSecretKey }}
-    #             echo "" > inventory
-    #             echo "" > dns.yml
-    #             nodejs aws.js iTrust
-    #             sleep 45s
-    #             ansible-playbook iTrust.yml -i inventory -vvv
-                
+    publishers:
+        # - post-tasks:
+        #     - matches:
+        #         - log-text:
+        #           operator: AND
+        #       escalate-status: false
+        #       run-if-job-successful: true
+        #       script: |
+        #         cd /home/ubuntu/iTrust
+        #         export AWSAccessKeyId={{ AWSAccessKeyId }}
+        #         export AWSSecretKey={{ AWSSecretKey }}
+        #         echo "" > inventory
+        #         echo "" > dns.yml
+        #         nodejs aws.js iTrust
+        #         sleep 45s
+        #         ansible-playbook iTrust.yml -i inventory -vvv
+        - jacoco:
+            exec-pattern: '**/**.exec'
+            class-pattern: '**/classes'
+            source-pattern: '**/src/main/java'
+            update-build-status: false
+            inclusion-pattern: '**/*.class'
+            exclusion-pattern: '**/*Test*.class'

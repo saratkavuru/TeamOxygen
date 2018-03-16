@@ -267,7 +267,14 @@
         - build-token-root
         - credentials-binding
         - envinject
-        - jacoco
+
+    - name: "Install jacoco with proper version"
+      jenkins_plugin: 
+        name: jacoco
+        params: "{{ jenkins_params }}"
+        url_password: "{{ admin_password }}"
+        version: "2.0.1"
+        validate_certs: no
 
     - name: Restart jenkins when user changes.
       service: name=jenkins state=restarted

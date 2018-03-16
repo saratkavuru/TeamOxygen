@@ -134,7 +134,7 @@ def testPriortization(buildNumber):
 
 def main():
 	failTestCount = 0
-	for i in range(30):
+	for i in range(1):
 		command = 'cd /var/lib/jenkins/jobs/iTrust/workspace/iTrust2-v2 && git checkout -B fuzzer'
 		os.system(command)
 		fuzzing()
