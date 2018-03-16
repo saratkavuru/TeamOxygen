@@ -4,6 +4,7 @@
 # https://tecadmin.net/install-jenkins-in-ubuntu/
 # https://github.com/geerlingguy/ansible-role-jenkins/blob/master/handlers/main.yml
 # https://jjasghar.github.io/blog/2016/01/03/getting-jenkins-and-jenkins-job-builder-running/
+# https://stackoverflow.com/questions/23769478/how-to-change-port-for-jenkins-window-service-when-8080-is-being-used
 #
 # ansible-playbook  --ask-vault-pass JenkinsConfig.yml -i inventory -vvv
 
@@ -22,7 +23,7 @@
     - jenkins_jar_location: /opt/jenkins-cli.jar
     - jenkins_params:
         url_username: admin
-        url: http://{{ JenkinsDns }}:8080
+        url: http://{{ JenkinsDns }}:8081
   
   tasks:
     - name: Install add-apt-repostory
@@ -85,11 +86,6 @@
         name: jenkins
         state: "{{ jenkins_package_state }}"
 
-    # - name: upgrade pip
-    #   pip:
-    #     name: pip
-    #     extra_args: --upgrade
-
     - name: install pip dependencies
       pip:
         name: "{{ item }}" 
@@ -97,9 +93,14 @@
         - jenkins-job-builder
         - requests
 
-    - name: Restart jenkins when user changes.
+    - name: copy jenkins file
+      copy:
+        src: jenkins
+        dest: /etc/default/jenkins
+
+    - name: Restart jenkins
       service: name=jenkins state=restarted
-        
+
     - name: Add nodesource apt key
       shell: curl -s https://deb.nodesource.com/gpgkey/nodesource.gpg.key | apt-key add -
 
@@ -143,7 +144,7 @@
 
     - name: Get the jenkins-cli jarfile from the Jenkins server.
       get_url:
-        url: "http://{{ JenkinsDns }}:8080/jnlpJars/jenkins-cli.jar"
+        url: "http://{{ JenkinsDns }}:8081/jnlpJars/jenkins-cli.jar"
         dest: "{{ jenkins_jar_location }}"
       register: jarfile_get
       until: "'OK' in jarfile_get.msg or 'file already exists' in jarfile_get.msg"
@@ -151,11 +152,13 @@
       delay: 10
       check_mode: no
     
-    - action: command cat /var/lib/jenkins/secrets/initialAdminPassword
+    - name: Get the contents of admin password file
+      action: command cat /var/lib/jenkins/secrets/initialAdminPassword
       register: out
       changed_when: "'z' in out.stdout"
 
-    - set_fact:
+    - name: Save the admin password to a variable
+      set_fact:
         admin_password: "{{ out.stdout_lines[0] }}"
 
     - name: copy jenkins config
@@ -212,6 +215,7 @@
         - aws.js
         - pom-data.xml
         - fuzzer.py
+        - test_priortization.py
 
     - name: Copy iTrust.yml as a template onto the Jenkins server for iTrust
       template:
@@ -243,7 +247,8 @@
         mode: 0777
       with_items:
         - inventory
-        - dns.yml        
+        - dns.yml
+        - priortization.dat     
 
     # - name: Install dependencies for aws.js for checkbox
     #   shell: npm install
@@ -276,12 +281,12 @@
         version: "2.0.1"
         validate_certs: no
 
-    - name: Restart jenkins when user changes.
+    - name: Restart jenkins
       service: name=jenkins state=restarted
 
     - name: "Wait For Jenkins To Come Up"
       uri:
-        url: "http://{{ JenkinsDns }}:8080/cli/"
+        url: "http://{{ JenkinsDns }}:8081/cli/"
         status_code: 403
       register: result
       until: result.status == 403
@@ -311,7 +316,7 @@
         git_password: "{{ git_password }}"
 
     # - name: Run a checkbox build
-    #   shell: curl -v http://{{ JenkinsDns }}:8080/buildByToken/build?job=checkbox\&token=8fc61f12b36588bf13393a30a6af61e6
+    #   shell: curl -v http://{{ JenkinsDns }}:8081/buildByToken/build?job=checkbox\&token=8fc61f12b36588bf13393a30a6af61e6
     
    # Rest are for iTrust in Jenkins
     - name: Install python-mysqldb
@@ -337,10 +342,25 @@
       wait_for: port=3306
       become: true
 
-    - name: Run the python script
-      shell: python /home/ubuntu/iTrust/fuzzer.py
+    - name: Create the repo
+      shell: |
+        if [ ! -d "iTrust2-v1" ] ; then
+          git clone "https://{{ git_username }}:{{ git_password }}@github.ncsu.edu/engr-csc326-staff/iTrust2-v1"
+          cd iTrust2-v1/iTrust2
+          cp src/main/java/db.properties.template src/main/java/db.properties
+          cp src/main/resources/hibernate.properties.template src/main/resources/hibernate.properties
+          cp src/main/java/email.properties.template src/main/java/email.properties
+        fi
+      chdir: /var/lib/jenkins/jobs/iTrust/workspace/  
 
     # - name: Run a iTrust build
-    #   shell: curl -v http://{{ JenkinsDns }}:8080/buildByToken/build?job=iTrust\&token=8fc61f12b36588bf13393a30a6af61e6
+    #   shell: curl -v http://{{ JenkinsDns }}:8081/buildByToken/build?job=iTrust\&token=8fc61f12b36588bf13393a30a6af61e6
+      
+    # - name: Run the python script
+    #   shell: python /home/ubuntu/iTrust/fuzzer.py
+    #   with_sequence: count=2
+
+    # - name: Run the python script
+    #   shell: python /home/ubuntu/iTrust/test_priortization.py
         
 ...

@@ -10,7 +10,7 @@ sha1 = ""
 
 def fuzzing():
 	files = []
-	dir_name = "/var/lib/jenkins/jobs/iTrust/workspace/iTrust2-v2/iTrust2/src/main/java/edu/ncsu/csc/itrust2"
+	dir_name = "/var/lib/jenkins/jobs/iTrust/workspace/iTrust2-v1/iTrust2/src/main/java/edu/ncsu/csc/itrust2"
 	# print(dir_name)
 	for root, dirnames, filenames in os.walk(dir_name):
 		for filename in fnmatch.filter(filenames, '*.java'):
@@ -18,6 +18,7 @@ def fuzzing():
 				continue
 			files.append(os.path.join(root, filename))
 
+	random.seed()
 	prob = random.randint(1,1001)
 	for file_name in files:
 
@@ -64,7 +65,7 @@ def fuzzing():
 					# print(line)
 
 			if re.findall(r'\"(.+?)\"',line) and 'ResponseEntity' not in line and 'ROLE' not in line and 'port' not in line and '#' not in line and 'setEmail' not in line and '@' not in line and 'SimpleDateFormat' not in line and 'addAttribute' not in line and 'getProperty' not in line and 'put' not in line and '/' not in line and 'Query' not in line and '?' not in line :
-				if(prob >= 700 and prob < 1001):
+				if(prob >= 700 and prob < 825):
 					# print(line)
 					match = re.findall(r'\"(.+?)\"',line)
 					if(match[0]!=' ' and match[0]!=''):
@@ -78,20 +79,20 @@ def fuzzing():
 			fout.write(l)
 
 def gitCommit(i):
-	command = 'cd  /var/lib/jenkins/jobs/iTrust/workspace/iTrust2-v2 && git add --all . && git commit -am "fuzzing commit '+str(i)+'"'
+	command = 'cd  /var/lib/jenkins/jobs/iTrust/workspace/iTrust2-v1 && git add --all . && git commit -am "fuzzing commit '+str(i)+'"'
 	os.system(command)
 	sha1 = os.popen('git rev-parse HEAD').read()
 
 def jenkins():
 	pas = os.popen('sudo cat /var/lib/jenkins/secrets/initialAdminPassword').read().strip()
-	requests.get("http://127.0.0.1:8080/buildByToken/build?job=iTrust&token=8fc61f12b36588bf13393a30a6af61e6")
-	response = requests.get('http://127.0.0.1:8080/job/iTrust/api/json',auth=('admin', pas))
+	requests.get("http://127.0.0.1:8081/buildByToken/build?job=iTrust&token=8fc61f12b36588bf13393a30a6af61e6")
+	response = requests.get('http://127.0.0.1:8081/job/iTrust/api/json',auth=('admin', pas))
 	data = response.json()
 	buildNumber = data['nextBuildNumber']
 	tries = 0
 	while True:
 		try:
-			response = requests.get('http://127.0.0.1:8080/job/iTrust/' + str(buildNumber)  + '/api/json', auth=('admin', pas))
+			response = requests.get('http://127.0.0.1:8081/job/iTrust/' + str(buildNumber)  + '/api/json', auth=('admin', pas))
 			data = response.json()
 			if data['building'] != False:
 				time.sleep(10)
@@ -109,7 +110,7 @@ def revertcommit():
 	Checks out the master branch and deletes the fuzzer branch
 	TODO : Maybe there is no commit.
 	"""
-	command = 'cd /var/lib/jenkins/jobs/iTrust/workspace/iTrust2-v2 && git checkout master && git branch -D fuzzer'
+	command = 'cd /var/lib/jenkins/jobs/iTrust/workspace/iTrust2-v1 && git checkout master && git branch -D fuzzer'
 	os.system(command)
 
 testList = []
@@ -135,17 +136,19 @@ def testPriortization(buildNumber):
 def main():
 	failTestCount = 0
 	for i in range(1):
-		command = 'cd /var/lib/jenkins/jobs/iTrust/workspace/iTrust2-v2 && git checkout -B fuzzer'
+		command = 'cd /var/lib/jenkins/jobs/iTrust/workspace/iTrust2-v1 && git checkout -B fuzzer'
 		os.system(command)
 		fuzzing()
 		gitCommit(i)
 		buildNumber = jenkins()
 		revertcommit()
 		failTestCount = failTestCount + testPriortization(buildNumber)
-
-	testList.sort(key=lambda x: x[1])
-	print(testList)
-	print("Number of test cases failed ", str(failTestCount))
+	
+	with open("/home/ubuntu/iTrust/priortization.dat", 'w+') as f:
+		f.write(str(testList))
+		# testList.sort(key=lambda x: x[1])
+		# print(testList)
+		# print("Number of test cases failed ", str(failTestCount))
 
 if __name__ == "__main__":
 	main()
