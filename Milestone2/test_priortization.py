@@ -1,3 +1,6 @@
+# Ref:
+# https://stackoverflow.com/questions/38712635/writing-list-of-tuples-to-a-textfile-and-reading-back-into-a-list
+
 import os, ast
 
 with open("/home/ubuntu/iTrust/priortization.dat", 'r') as f:

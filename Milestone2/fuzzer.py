@@ -42,35 +42,35 @@ def fuzzing():
 
 			if((re.match('(.*)if(.*)',line) is not None or re.match('(.*)while(.*)',line) is not None ) and re.match('(.*)==(.*)',line) is not None):
 				if(prob >= 250 and prob < 375):
-					# print(line)
+					print(line)
 					line = re.sub('==','!=',line)
-					# print(line)
+					print(line)
 
 			if((re.match('(.*)if(.*)',line) is not None or re.match('(.*)while(.*)',line) is not None ) and re.match('(.*)!=(.*)',line) is not None):
 				if(prob >= 375 and prob < 500):
-					# print(line)
+					print(line)
 					line = re.sub('!=','==',line)
-					# print(line)
+					print(line)
 
 			if ((re.match('(.*)if(.*)',line) is not None or re.match('(.*)while(.*)',line) is not None ) and re.match('(.*) 0(.*)',line) is not None):
 				if(prob >= 500 and prob < 625):
-					# print(line)
+					print(line)
 					line = re.sub(' 0',' 1',line)
-					# print(line)
+					print(line)
 
 			if ((re.match('(.*)if(.*)',line) is not None or re.match('(.*)while(.*)',line) is not None ) and re.match('(.*) 1(.*)',line) is not None):
 				if(prob >= 625 and prob < 700):
-					# print(line)
+					print(line)
 					line = re.sub(' 1',' 0',line)
-					# print(line)
+					print(line)
 
 			if re.findall(r'\"(.+?)\"',line) and 'ResponseEntity' not in line and 'ROLE' not in line and 'port' not in line and '#' not in line and 'setEmail' not in line and '@' not in line and 'SimpleDateFormat' not in line and 'addAttribute' not in line and 'getProperty' not in line and 'put' not in line and '/' not in line and 'Query' not in line and '?' not in line :
 				if(prob >= 700 and prob < 825):
-					# print(line)
+					print(line)
 					match = re.findall(r'\"(.+?)\"',line)
 					if(match[0]!=' ' and match[0]!=''):
 						line = line.replace(match[0], "not" + match[0])
-					# print(line)
+					print(line)
 
 			lines2.append(line)
 
