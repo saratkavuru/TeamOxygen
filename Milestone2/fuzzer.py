@@ -10,11 +10,11 @@ sha1 = ""
 
 def fuzzing():
 	files = []
-	dir_name = "/var/lib/jenkins/jobs/iTrust/workspace/iTrust2-v2"
-	print(dir_name)
+	dir_name = "/var/lib/jenkins/jobs/iTrust/workspace/iTrust2-v2/iTrust2/src/main/java/edu/ncsu/csc/itrust2"
+	# print(dir_name)
 	for root, dirnames, filenames in os.walk(dir_name):
 		for filename in fnmatch.filter(filenames, '*.java'):
-			if "model" in root or "mysql" in root or "test" in root or "AddApptRequestAction.java" or "EmailUtil.java" in filename:
+			if "models" in root or "mysql" in root or "test" in root or "AddApptRequestAction.java" in filename:
 				continue
 			files.append(os.path.join(root, filename))
 
@@ -27,42 +27,48 @@ def fuzzing():
 		lines2 = []
 
 		for line in lines:
-			if ('if in line' or 'while in line' ) and '<' not in line and '>' not in line:
-					if(prob < 125):
-						line = re.sub('<','>',line)
-						# print(line)
+			if((re.match('(.*)if(.*)',line) is not None or re.match('(.*)while(.*)',line) is not None ) and re.match('(.*)<(.*)',line) is not None and re.match('.*<.+>.*',line) is None):
+				if(prob < 125):
+					# print(line)
+					line = re.sub('<','>',line)
+					# print(line)
 
 			if((re.match('(.*)if(.*)',line) is not None or re.match('(.*)while(.*)',line) is not None ) and re.match('(.*)>(.*)',line) is not None):
-					if(prob >= 125 and prob < 250):
-						line = re.sub('>','<',line)
-						# print(line)
+				if(prob >= 125 and prob < 250):
+					# print(line)
+					line = re.sub('>','<',line)
+					# print(line)
 
 			if((re.match('(.*)if(.*)',line) is not None or re.match('(.*)while(.*)',line) is not None ) and re.match('(.*)==(.*)',line) is not None):
-					if(prob >= 250 and prob < 375):
-						line = re.sub('==','!=',line)
-						# print(line)
+				if(prob >= 250 and prob < 375):
+					# print(line)
+					line = re.sub('==','!=',line)
+					# print(line)
 
 			if((re.match('(.*)if(.*)',line) is not None or re.match('(.*)while(.*)',line) is not None ) and re.match('(.*)!=(.*)',line) is not None):
-					if(prob >= 375 and prob < 500):
-						line = re.sub('!=','==',line)
-						# print(line)
+				if(prob >= 375 and prob < 500):
+					# print(line)
+					line = re.sub('!=','==',line)
+					# print(line)
 
 			if ((re.match('(.*)if(.*)',line) is not None or re.match('(.*)while(.*)',line) is not None ) and re.match('(.*) 0(.*)',line) is not None):
 				if(prob >= 500 and prob < 625):
+					# print(line)
 					line = re.sub(' 0',' 1',line)
 					# print(line)
 
 			if ((re.match('(.*)if(.*)',line) is not None or re.match('(.*)while(.*)',line) is not None ) and re.match('(.*) 1(.*)',line) is not None):
 				if(prob >= 625 and prob < 700):
+					# print(line)
 					line = re.sub(' 1',' 0',line)
 					# print(line)
 
-			# if re.findall(r'\"(.+?)\"',line) and not line.strip().startswith('@'):
-			# 	# print line,"\n"
-			# 	if(prob >= 700 and prob <= 1001):
-			# 		# print " MATCHED STRING"
-			# 		match = matches=re.findall(r'\"(.+?)\"',line)
-			# 		line = line.replace(match[0], "NEQ - " + match[0])
+			if re.findall(r'\"(.+?)\"',line) and 'ResponseEntity' not in line and 'ROLE' not in line and 'port' not in line and '#' not in line and 'setEmail' not in line and '@' not in line and 'SimpleDateFormat' not in line and 'addAttribute' not in line and 'getProperty' not in line and 'put' not in line and '/' not in line and 'Query' not in line and '?' not in line :
+				if(prob >= 700 and prob < 1001):
+					# print(line)
+					match = re.findall(r'\"(.+?)\"',line)
+					if(match[0]!=' ' and match[0]!=''):
+						line = line.replace(match[0], "not" + match[0])
 					# print(line)
 
 			lines2.append(line)
@@ -82,12 +88,16 @@ def jenkins():
 	response = requests.get('http://127.0.0.1:8080/job/iTrust/api/json',auth=('admin', pas))
 	data = response.json()
 	buildNumber = data['nextBuildNumber']
+	tries = 0
 	while True:
 		try:
 			response = requests.get('http://127.0.0.1:8080/job/iTrust/' + str(buildNumber)  + '/api/json', auth=('admin', pas))
 			data = response.json()
 			if data['building'] != False:
-				time.sleep(5)
+				time.sleep(10)
+				tries = tries + 1
+				if tries > 200:
+					break
 				continue
 			break
 		except ValueError:
@@ -124,7 +134,7 @@ def testPriortization(buildNumber):
 
 def main():
 	failTestCount = 0
-	for i in range(2):
+	for i in range(30):
 		command = 'cd /var/lib/jenkins/jobs/iTrust/workspace/iTrust2-v2 && git checkout -B fuzzer'
 		os.system(command)
 		fuzzing()

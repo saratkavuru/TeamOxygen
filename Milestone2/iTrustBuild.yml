@@ -20,6 +20,8 @@
                     cp src/main/resources/hibernate.properties.template src/main/resources/hibernate.properties
                     cp src/main/java/email.properties.template src/main/java/email.properties
                     cp /home/ubuntu/iTrust/pom-data.xml ./pom.xml
+                    git add pom.xml
+                    git commit -m "pom"
                 fi
                 cd /var/lib/jenkins/jobs/iTrust/workspace/iTrust2-v2/iTrust2
                 mvn clean test verify checkstyle:checkstyle
