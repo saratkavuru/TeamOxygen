@@ -51,40 +51,40 @@
         - python-pip
         - maven
 
-    - name: Add Jenkins apt repository key.
-      apt_key:
-        url: "{{ jenkins_repo_key_url }}"
-        state: present
+    # - name: Add Jenkins apt repository key.
+    #   apt_key:
+    #     url: "{{ jenkins_repo_key_url }}"
+    #     state: present
 
-    - name: Add Jenkins apt repository.
-      apt_repository:
-        repo: "{{ jenkins_repo_url }}"
-        state: present
-        update_cache: yes
-      when: jenkins_repo_url != ''
+    # - name: Add Jenkins apt repository.
+    #   apt_repository:
+    #     repo: "{{ jenkins_repo_url }}"
+    #     state: present
+    #     update_cache: yes
+    #   when: jenkins_repo_url != ''
 
-    - name: Download specific Jenkins version.
-      get_url:
-        url: "{{ jenkins_pkg_url }}/jenkins_{{ jenkins_version }}_all.deb"
-        dest: "/tmp/jenkins_{{ jenkins_version }}_all.deb"
-      when: jenkins_version is defined
+    # - name: Download specific Jenkins version.
+    #   get_url:
+    #     url: "{{ jenkins_pkg_url }}/jenkins_{{ jenkins_version }}_all.deb"
+    #     dest: "/tmp/jenkins_{{ jenkins_version }}_all.deb"
+    #   when: jenkins_version is defined
 
-    - name: Check if we downloaded a specific version of Jenkins.
-      stat:
-        path: "/tmp/jenkins_{{ jenkins_version }}_all.deb"
-      register: specific_version
-      when: jenkins_version is defined
+    # - name: Check if we downloaded a specific version of Jenkins.
+    #   stat:
+    #     path: "/tmp/jenkins_{{ jenkins_version }}_all.deb"
+    #   register: specific_version
+    #   when: jenkins_version is defined
 
-    - name: Install our specific version of Jenkins.
-      apt:
-        deb: "/tmp/jenkins_{{ jenkins_version }}_all.deb"
-        state: installed
-      when: jenkins_version is defined and specific_version.stat.exists
+    # - name: Install our specific version of Jenkins.
+    #   apt:
+    #     deb: "/tmp/jenkins_{{ jenkins_version }}_all.deb"
+    #     state: installed
+    #   when: jenkins_version is defined and specific_version.stat.exists
 
-    - name: Ensure Jenkins is installed.
-      apt:
-        name: jenkins
-        state: "{{ jenkins_package_state }}"
+    # - name: Ensure Jenkins is installed.
+    #   apt:
+    #     name: jenkins
+    #     state: "{{ jenkins_package_state }}"
 
     - name: install pip dependencies
       pip:
@@ -94,13 +94,13 @@
         - requests
         - pymysql
 
-    - name: copy jenkins file
-      copy:
-        src: jenkins
-        dest: /etc/default/jenkins
+    # - name: copy jenkins file
+    #   copy:
+    #     src: jenkins
+    #     dest: /etc/default/jenkins
 
-    - name: Restart jenkins
-      service: name=jenkins state=restarted
+    # - name: Restart jenkins
+    #   service: name=jenkins state=restarted
 
     - name: Add nodesource apt key
       shell: curl -s https://deb.nodesource.com/gpgkey/nodesource.gpg.key | apt-key add -
@@ -119,117 +119,129 @@
       with_items:
        - nodejs
 
-    - name: Add ansible repository
-      apt_repository:
-        repo: ppa:ansible/ansible
-        update_cache: yes
+    # - name: Add ansible repository
+    #   apt_repository:
+    #     repo: ppa:ansible/ansible
+    #     update_cache: yes
 
-    - name: Install ansible
-      apt:
-        name: ansible   
-        state: present 
+    # - name: Install ansible
+    #   apt:
+    #     name: ansible   
+    #     state: present 
 
     - name: Include vars from the vault
       include_vars:
         file: creds.yml
       no_log: true
 
-    - name: Export AWSAccessKeyId as env variable
-      shell: export AWSAccessKeyId="{{ AWSAccessKeyId }}"
+    # - name: Export AWSAccessKeyId as env variable
+    #   shell: export AWSAccessKeyId="{{ AWSAccessKeyId }}"
 
-    - name: Export AWSSecretKey as env variable
-      shell: export AWSSecretKey="{{ AWSSecretKey }}" 
+    # - name: Export AWSSecretKey as env variable
+    #   shell: export AWSSecretKey="{{ AWSSecretKey }}" 
     
     - include_vars:
         file: dns.yml
 
-    - name: Get the jenkins-cli jarfile from the Jenkins server.
-      get_url:
-        url: "http://{{ JenkinsDns }}:8081/jnlpJars/jenkins-cli.jar"
-        dest: "{{ jenkins_jar_location }}"
-      register: jarfile_get
-      until: "'OK' in jarfile_get.msg or 'file already exists' in jarfile_get.msg"
-      retries: 5
-      delay: 10
-      check_mode: no
+    # - name: Get the jenkins-cli jarfile from the Jenkins server.
+    #   get_url:
+    #     url: "http://{{ JenkinsDns }}:8081/jnlpJars/jenkins-cli.jar"
+    #     dest: "{{ jenkins_jar_location }}"
+    #   register: jarfile_get
+    #   until: "'OK' in jarfile_get.msg or 'file already exists' in jarfile_get.msg"
+    #   retries: 5
+    #   delay: 10
+    #   check_mode: no
     
-    - name: Get the contents of admin password file
-      action: command cat /var/lib/jenkins/secrets/initialAdminPassword
-      register: out
-      changed_when: "'z' in out.stdout"
+    # - name: Get the contents of admin password file
+    #   action: command cat /var/lib/jenkins/secrets/initialAdminPassword
+    #   register: out
+    #   changed_when: "'z' in out.stdout"
 
-    - name: Save the admin password to a variable
-      set_fact:
-        admin_password: "{{ out.stdout_lines[0] }}"
+    # - name: Save the admin password to a variable
+    #   set_fact:
+    #     admin_password: "{{ out.stdout_lines[0] }}"
 
-    - name: copy jenkins config
-      copy:
-        src: ./config.xml
-        dest: /var/lib/jenkins/config.xml
-
-    # - name: copy DevOps.pem for checkbox
+    # - name: copy jenkins config
     #   copy:
-    #     src: DevOps.pem
-    #     dest: /home/ubuntu/DevOps.pem
+    #     src: ./config.xml
+    #     dest: /var/lib/jenkins/config.xml
+
+    # # - name: copy DevOps.pem for checkbox
+    # #   copy:
+    # #     src: DevOps.pem
+    # #     dest: /home/ubuntu/DevOps.pem
+    # #     owner: jenkins
+    # #     group: jenkins
+    # #     mode: 0400
+
+    # - name: create a directory for iTrust
+    #   file:
+    #     path: /home/ubuntu/iTrust
+    #     state: directory
     #     owner: jenkins
     #     group: jenkins
-    #     mode: 0400
+    #     mode: 0755
 
-    - name: create a directory for iTrust
-      file:
-        path: /home/ubuntu/iTrust
-        state: directory
-        owner: jenkins
-        group: jenkins
-        mode: 0755
+    # - name: copy DevOps.pem for iTrust
+    #   copy:
+    #     src: DevOps.pem
+    #     dest: /home/ubuntu/iTrust/DevOps.pem
+    #     owner: jenkins
+    #     group: jenkins
+    #     mode: 0400    
 
-    - name: copy DevOps.pem for iTrust
-      copy:
-        src: DevOps.pem
-        dest: /home/ubuntu/iTrust/DevOps.pem
-        owner: jenkins
-        group: jenkins
-        mode: 0400    
+    # # - name: Copy important files onto the Jenkins server for Checkbox
+    # #   copy:
+    # #     src: '{{ item }}'
+    # #     dest: '/home/ubuntu/{{ item }}'
+    # #     owner: ubuntu
+    # #     group: ubuntu
+    # #     mode: 0777
+    # #   with_items:
+    # #     - package.json
+    # #     - aws.js
+    # #     - Checkbox.yml
+    # #     - checkboxvar.yml
 
-    # - name: Copy important files onto the Jenkins server for Checkbox
+    # - name: Copy important files onto the Jenkins server for iTrust
     #   copy:
     #     src: '{{ item }}'
-    #     dest: '/home/ubuntu/{{ item }}'
+    #     dest: '/home/ubuntu/iTrust/{{ item }}'
     #     owner: ubuntu
     #     group: ubuntu
     #     mode: 0777
     #   with_items:
     #     - package.json
     #     - aws.js
-    #     - Checkbox.yml
-    #     - checkboxvar.yml
+    #     - pom-data.xml
+    #     - fuzzer.py
+    #     - test_priortization.py
 
-    - name: Copy important files onto the Jenkins server for iTrust
-      copy:
-        src: '{{ item }}'
-        dest: '/home/ubuntu/iTrust/{{ item }}'
-        owner: ubuntu
-        group: ubuntu
-        mode: 0777
-      with_items:
-        - package.json
-        - aws.js
-        - pom-data.xml
-        - fuzzer.py
-        - test_priortization.py
+    # - name: Copy iTrust.yml as a template onto the Jenkins server for iTrust
+    #   template:
+    #     src: iTrust.yml
+    #     dest: '/home/ubuntu/iTrust/iTrust.yml' 
+    #     owner: ubuntu
+    #     group: ubuntu
+    #     mode: 0777
 
-    - name: Copy iTrust.yml as a template onto the Jenkins server for iTrust
-      template:
-        src: iTrust.yml
-        dest: '/home/ubuntu/iTrust/iTrust.yml' 
-        owner: ubuntu
-        group: ubuntu
-        mode: 0777
+    # # - name: Create empty inventory and dns.yml on Jenkins server for checkbox
+    # #   copy:
+    # #     content: ""
+    # #     dest: '/home/ubuntu/{{ item }}'
+    # #     force: yes
+    # #     owner: ubuntu
+    # #     group: ubuntu
+    # #     mode: 0777
+    # #   with_items:
+    # #     - inventory
+    # #     - dns.yml
 
-    # - name: Create empty inventory and dns.yml on Jenkins server for checkbox
+    # - name: Create empty inventory and dns.yml on Jenkins server for iTrust
     #   copy:
     #     content: ""
-    #     dest: '/home/ubuntu/{{ item }}'
+    #     dest: '/home/ubuntu/iTrust/{{ item }}'
     #     force: yes
     #     owner: ubuntu
     #     group: ubuntu
@@ -237,126 +249,124 @@
     #   with_items:
     #     - inventory
     #     - dns.yml
+    #     - priortization.dat     
 
-    - name: Create empty inventory and dns.yml on Jenkins server for iTrust
-      copy:
-        content: ""
-        dest: '/home/ubuntu/iTrust/{{ item }}'
-        force: yes
-        owner: ubuntu
-        group: ubuntu
-        mode: 0777
-      with_items:
-        - inventory
-        - dns.yml
-        - priortization.dat     
+    # # - name: Install dependencies for aws.js for checkbox
+    # #   shell: npm install
+    # #   args:
+    # #     chdir: /home/ubuntu
 
-    # - name: Install dependencies for aws.js for checkbox
+    # - name: Install dependencies for aws.js for iTrust
     #   shell: npm install
     #   args:
-    #     chdir: /home/ubuntu
+    #     chdir: /home/ubuntu/iTrust    
 
-    - name: Install dependencies for aws.js for iTrust
-      shell: npm install
-      args:
-        chdir: /home/ubuntu/iTrust    
+    # - name: "Install Jenkins git and postbuild plugins"
+    #   jenkins_plugin: 
+    #     name: "{{ item }}"
+    #     params: "{{ jenkins_params }}"
+    #     url_password: "{{ admin_password }}"
+    #     validate_certs: no
+    #   with_items:
+    #     - git
+    #     - postbuild-task
+    #     - build-token-root
+    #     - credentials-binding
+    #     - envinject
 
-    - name: "Install Jenkins git and postbuild plugins"
-      jenkins_plugin: 
-        name: "{{ item }}"
-        params: "{{ jenkins_params }}"
-        url_password: "{{ admin_password }}"
-        validate_certs: no
-      with_items:
-        - git
-        - postbuild-task
-        - build-token-root
-        - credentials-binding
-        - envinject
+    # - name: "Install jacoco with proper version"
+    #   jenkins_plugin: 
+    #     name: jacoco
+    #     params: "{{ jenkins_params }}"
+    #     url_password: "{{ admin_password }}"
+    #     version: "2.0.1"
+    #     validate_certs: no
 
-    - name: "Install jacoco with proper version"
-      jenkins_plugin: 
-        name: jacoco
-        params: "{{ jenkins_params }}"
-        url_password: "{{ admin_password }}"
-        version: "2.0.1"
-        validate_certs: no
+    # - name: Restart jenkins
+    #   service: name=jenkins state=restarted
 
-    - name: Restart jenkins
-      service: name=jenkins state=restarted
+    # - name: "Wait For Jenkins To Come Up"
+    #   uri:
+    #     url: "http://{{ JenkinsDns }}:8081/cli/"
+    #     status_code: 403
+    #   register: result
+    #   until: result.status == 403
+    #   retries: 10
+    #   delay: 5
 
-    - name: "Wait For Jenkins To Come Up"
-      uri:
-        url: "http://{{ JenkinsDns }}:8081/cli/"
-        status_code: 403
-      register: result
-      until: result.status == 403
-      retries: 10
-      delay: 5
-
-    # - name: Copy checkbox build file to jenkins server
-    #   template:
-    #     src: CheckBoxBuild.yml
-    #     dest: /home/ubuntu/CheckBoxBuild.yml
+    # # - name: Copy checkbox build file to jenkins server
+    # #   template:
+    # #     src: CheckBoxBuild.yml
+    # #     dest: /home/ubuntu/CheckBoxBuild.yml
     
-    - name: Copy iTrust build file to jenkins server
-      template:
-        src: iTrustBuild.yml
-        dest: /home/ubuntu/iTrust/iTrustBuild.yml
+    # - name: Copy iTrust build file to jenkins server
+    #   template:
+    #     src: iTrustBuild.yml
+    #     dest: /home/ubuntu/iTrust/iTrustBuild.yml
 
-    - name: jenkins job builder configuration
-      action: template src="./jenkins_jobs.ini" dest="/home/ubuntu/jenkins_jobs.ini" owner=root group=root mode=0600
+    # - name: jenkins job builder configuration
+    #   action: template src="./jenkins_jobs.ini" dest="/home/ubuntu/jenkins_jobs.ini" owner=root group=root mode=0600
   
-    # - name: Create checkbox job using jjb
-    #   command: jenkins-jobs --conf /home/ubuntu/jenkins_jobs.ini update /home/ubuntu/CheckBoxBuild.yml
+    # # - name: Create checkbox job using jjb
+    # #   command: jenkins-jobs --conf /home/ubuntu/jenkins_jobs.ini update /home/ubuntu/CheckBoxBuild.yml
       
-    - name: Create iTrust job using jjb
-      command: jenkins-jobs --conf /home/ubuntu/jenkins_jobs.ini update /home/ubuntu/iTrust/iTrustBuild.yml
-      environment:
-        git_username: "{{ git_username }}"
-        git_password: "{{ git_password }}"
+    # - name: Create iTrust job using jjb
+    #   command: jenkins-jobs --conf /home/ubuntu/jenkins_jobs.ini update /home/ubuntu/iTrust/iTrustBuild.yml
+    #   environment:
+    #     git_username: "{{ git_username }}"
+    #     git_password: "{{ git_password }}"
 
     # - name: Run a checkbox build
     #   shell: curl -v http://{{ JenkinsDns }}:8081/buildByToken/build?job=checkbox\&token=8fc61f12b36588bf13393a30a6af61e6
     
     # Checkbox Testing
-    # - name: clone the checkbox repo
-    #   git:
-    #     repo: https://github.com/chrisparnin/checkbox.io
-    #     dest: /home/ubuntu
-    
-    # - name: clone test generation repo
-    #   git:
-    #     repo: https://github.com/CSC-DevOps/TestGeneration
-    #     dest: /home/ubuntu
+    - name: Clone repos
+      shell: |
+        if [ ! -d "checkbox.io" ] ; then
+          git clone https://github.com/chrisparnin/checkbox.io
+        fi
+        if [ ! -d "TestGeneration" ] ; then
+          git clone https://github.com/CSC-DevOps/TestGeneration
+        fi
+      become: no     
 
-    # - name: Copy main.js onto the Jenkins server for Checkbox test
-    #   copy:
-    #     src: '{{ item }}'
-    #     dest: '/home/ubuntu/TestGeneration/{{ item }}'
-    #     owner: ubuntu
-    #     group: ubuntu
-    #     mode: 0777
-    #   with_items:
-    #     - main.js
+    - name: Install packages based on package.json.
+      npm:
+        path: /home/ubuntu/TestGeneration
+      become: no
 
-    # - name: Copy other js files onto the Jenkins server for Checkbox test
-    #   copy:
-    #     src: '{{ item }}'
-    #     dest: '/home/ubuntu/TestGeneration/src/{{ item }}'
-    #     owner: ubuntu
-    #     group: ubuntu
-    #     mode: 0777
-    #   with_items:
-    #     - constraint.js
-    #     - testgenerator.js       
+    - name: Copy main.js onto the Jenkins server for Checkbox test
+      copy:
+        src: '{{ item }}'
+        dest: '/home/ubuntu/TestGeneration/{{ item }}'
+        owner: ubuntu
+        group: ubuntu
+        mode: 0777
+      with_items:
+        - main.js
+      become: no
+
+    - name: Copy other js files onto the Jenkins server for Checkbox test
+      copy:
+        src: '{{ item }}'
+        dest: '/home/ubuntu/TestGeneration/src/{{ item }}'
+        owner: ubuntu
+        group: ubuntu
+        mode: 0777
+      with_items:
+        - constraint.js
+        - testgenerator.js
+      become: no   
 
     # - name: Run commands to check coverage
     #   shell: |
-    #     npm install
     #     node main.js
     #     node_modules/.bin/istanbul cover test.js
-    #   chdir: /home/ubuntu/TestGeneration        
+    #   args:        
+    #     chdir: /home/ubuntu/TestGeneration       
+    #   async: 2000
+    #   poll: 5 
+    #   become: no
 
     # - pause:
     #     seconds: 10
@@ -368,37 +378,37 @@
     # - pause:
     #     seconds: 5
 
-    - name: Install python-mysqldb
-      apt: name=python-mysqldb state=present
-      become: true
+    # - name: Install python-mysqldb
+    #   apt: name=python-mysqldb state=present
+    #   become: true
     
-    - name: Install sql-server
-      apt: name=mysql-server state=present
-      become: true
+    # - name: Install sql-server
+    #   apt: name=mysql-server state=present
+    #   become: true
     
-    - name: To accept lower case table names in mysql
-      lineinfile:
-        path: /etc/mysql/my.cnf
-        regexp: "skip-external-locking"
-        insertafter: "skip-external-locking"
-        line: "lower_case_table_names=1"
-      become: true
+    # - name: To accept lower case table names in mysql
+    #   lineinfile:
+    #     path: /etc/mysql/my.cnf
+    #     regexp: "skip-external-locking"
+    #     insertafter: "skip-external-locking"
+    #     line: "lower_case_table_names=1"
+    #   become: true
     
-    - name: restart mysql
-      shell: sudo service mysql restart
+    # - name: restart mysql
+    #   shell: sudo service mysql restart
     
-    - name: wait for my-sql to start
-      wait_for: port=3306
-      become: true
+    # - name: wait for my-sql to start
+    #   wait_for: port=3306
+    #   become: true
       
-    - name: Run the python script
-      shell: python /home/ubuntu/iTrust/fuzzer.py
-      with_sequence: count=100
-      async: 2000000
-      poll: 5
-      ignore_errors: yes
+    # - name: Run the python script
+    #   shell: python /home/ubuntu/iTrust/fuzzer.py
+    #   with_sequence: count=100
+    #   async: 2000000
+    #   poll: 5
+    #   ignore_errors: yes
 
-    - name: Run the python priortization script
-      shell: python /home/ubuntu/iTrust/test_priortization.py
+    # - name: Run the python priortization script
+    #   shell: python /home/ubuntu/iTrust/test_priortization.py
         
 ...
