@@ -20,63 +20,66 @@ def fuzzing():
 
 	random.seed()
 	prob = random.randint(1,1001)
-	for file_name in files:
+	random.seed()
+	prob2 = random.randint(1,1001)
+	if prob2 < 500:
+		for file_name in files:
 
-		f = open(file_name, 'r')
-		lines = f.readlines()
-		lines1 = lines
-		lines2 = []
+			f = open(file_name, 'r')
+			lines = f.readlines()
+			lines1 = lines
+			lines2 = []
 
-		for line in lines:
-			if((re.match('(.*)if(.*)',line) is not None or re.match('(.*)while(.*)',line) is not None ) and re.match('(.*)<(.*)',line) is not None and re.match('.*<.+>.*',line) is None):
-				if(prob < 125):
-					# print(line)
-					line = re.sub('<','>',line)
-					# print(line)
+			for line in lines:
+				if((re.match('(.*)if(.*)',line) is not None or re.match('(.*)while(.*)',line) is not None ) and re.match('(.*)<(.*)',line) is not None and re.match('.*<.+>.*',line) is None):
+					if(prob < 125):
+						print(line)
+						line = re.sub('<','>',line)
+						print(line)
 
-			if((re.match('(.*)if(.*)',line) is not None or re.match('(.*)while(.*)',line) is not None ) and re.match('(.*)>(.*)',line) is not None):
-				if(prob >= 125 and prob < 250):
-					# print(line)
-					line = re.sub('>','<',line)
-					# print(line)
+				if((re.match('(.*)if(.*)',line) is not None or re.match('(.*)while(.*)',line) is not None ) and re.match('(.*)>(.*)',line) is not None):
+					if(prob >= 125 and prob < 250):
+						print(line)
+						line = re.sub('>','<',line)
+						print(line)
 
-			if((re.match('(.*)if(.*)',line) is not None or re.match('(.*)while(.*)',line) is not None ) and re.match('(.*)==(.*)',line) is not None):
-				if(prob >= 250 and prob < 375):
-					print(line)
-					line = re.sub('==','!=',line)
-					print(line)
+				if((re.match('(.*)if(.*)',line) is not None or re.match('(.*)while(.*)',line) is not None ) and re.match('(.*)==(.*)',line) is not None):
+					if(prob >= 250 and prob < 375):
+						print(line)
+						line = re.sub('==','!=',line)
+						print(line)
 
-			if((re.match('(.*)if(.*)',line) is not None or re.match('(.*)while(.*)',line) is not None ) and re.match('(.*)!=(.*)',line) is not None):
-				if(prob >= 375 and prob < 500):
-					print(line)
-					line = re.sub('!=','==',line)
-					print(line)
+				if((re.match('(.*)if(.*)',line) is not None or re.match('(.*)while(.*)',line) is not None ) and re.match('(.*)!=(.*)',line) is not None):
+					if(prob >= 375 and prob < 500):
+						print(line)
+						line = re.sub('!=','==',line)
+						print(line)
 
-			if ((re.match('(.*)if(.*)',line) is not None or re.match('(.*)while(.*)',line) is not None ) and re.match('(.*) 0(.*)',line) is not None):
-				if(prob >= 500 and prob < 625):
-					print(line)
-					line = re.sub(' 0',' 1',line)
-					print(line)
+				if ((re.match('(.*)if(.*)',line) is not None or re.match('(.*)while(.*)',line) is not None ) and re.match('(.*) 0(.*)',line) is not None):
+					if(prob >= 500 and prob < 625):
+						print(line)
+						line = re.sub(' 0',' 1',line)
+						print(line)
 
-			if ((re.match('(.*)if(.*)',line) is not None or re.match('(.*)while(.*)',line) is not None ) and re.match('(.*) 1(.*)',line) is not None):
-				if(prob >= 625 and prob < 700):
-					print(line)
-					line = re.sub(' 1',' 0',line)
-					print(line)
+				if ((re.match('(.*)if(.*)',line) is not None or re.match('(.*)while(.*)',line) is not None ) and re.match('(.*) 1(.*)',line) is not None):
+					if(prob >= 625 and prob < 700):
+						print(line)
+						line = re.sub(' 1',' 0',line)
+						print(line)
 
-			if re.findall(r'\"(.+?)\"',line) and 'ResponseEntity' not in line and 'ROLE' not in line and 'port' not in line and '#' not in line and 'setEmail' not in line and '@' not in line and 'SimpleDateFormat' not in line and 'addAttribute' not in line and 'getProperty' not in line and 'put' not in line and '/' not in line and 'Query' not in line and '?' not in line :
-				if(prob >= 700 and prob < 825):
-					print(line)
-					match = re.findall(r'\"(.+?)\"',line)
-					if(match[0]!=' ' and match[0]!=''):
-						line = line.replace(match[0], "not" + match[0])
-					print(line)
+				if re.findall(r'\"(.+?)\"',line) and 'reject' not in line and 'allActions' not in line and 'ResponseEntity' not in line and 'ROLE' not in line and 'port' not in line and '#' not in line and 'setEmail' not in line and '@' not in line and 'SimpleDateFormat' not in line and 'addAttribute' not in line and 'getProperty' not in line and 'put' not in line and '/' not in line and 'Query' not in line and '?' not in line :
+					if(prob >= 700 and prob < 1001):
+						print(line)
+						match = re.findall(r'\"(.+?)\"',line)
+						if(match[0]!=' ' and match[0]!=''):
+							line = line.replace(match[0], "not" + match[0])
+						print(line)
 
-			lines2.append(line)
+				lines2.append(line)
 
-		fout = open(file_name,'w')
-		for l in lines2:
-			fout.write(l)
+			fout = open(file_name,'w')
+			for l in lines2:
+				fout.write(l)
 
 def gitCommit(i):
 	command = 'cd  /var/lib/jenkins/jobs/iTrust/workspace/iTrust2-v1 && git add --all . && git commit -am "fuzzing commit '+str(i)+'"'

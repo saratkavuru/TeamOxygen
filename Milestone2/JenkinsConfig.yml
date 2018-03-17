@@ -319,6 +319,12 @@
     #   shell: curl -v http://{{ JenkinsDns }}:8081/buildByToken/build?job=checkbox\&token=8fc61f12b36588bf13393a30a6af61e6
     
    # Rest are for iTrust in Jenkins
+    - name: Run a iTrust build
+      shell: curl -v http://{{ JenkinsDns }}:8081/buildByToken/build?job=iTrust\&token=8fc61f12b36588bf13393a30a6af61e6
+
+    - pause:
+        seconds: 5
+
     - name: Install python-mysqldb
       apt: name=python-mysqldb state=present
       become: true
@@ -341,28 +347,12 @@
     - name: wait for my-sql to start
       wait_for: port=3306
       become: true
-
-    # - name: Create the repo
-    #   shell: |
-    #     if [ ! -d "iTrust2-v1" ] ; then
-    #       mkdir workspace
-    #       cd workspace
-    #       git clone "https://{{ git_username }}:{{ git_password }}@github.ncsu.edu/engr-csc326-staff/iTrust2-v1"
-    #       cd iTrust2-v1/iTrust2
-    #       cp src/main/java/db.properties.template src/main/java/db.properties
-    #       cp src/main/resources/hibernate.properties.template src/main/resources/hibernate.properties
-    #       cp src/main/java/email.properties.template src/main/java/email.properties
-    #     fi
-    #   chdir: /var/lib/jenkins/jobs/iTrust
-
-    - name: Run a iTrust build
-      shell: curl -v http://{{ JenkinsDns }}:8081/buildByToken/build?job=iTrust\&token=8fc61f12b36588bf13393a30a6af61e6
       
     - name: Run the python script
       shell: python /home/ubuntu/iTrust/fuzzer.py
-      with_sequence: count=2
+      with_sequence: count=5
 
-    - name: Run the python script
+    - name: Run the python priortization script
       shell: python /home/ubuntu/iTrust/test_priortization.py
         
 ...
