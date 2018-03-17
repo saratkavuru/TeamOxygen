@@ -92,6 +92,7 @@
       with_items:
         - jenkins-job-builder
         - requests
+        - pymysql
 
     - name: copy jenkins file
       copy:
@@ -318,12 +319,54 @@
     # - name: Run a checkbox build
     #   shell: curl -v http://{{ JenkinsDns }}:8081/buildByToken/build?job=checkbox\&token=8fc61f12b36588bf13393a30a6af61e6
     
-   # Rest are for iTrust in Jenkins
-    - name: Run a iTrust build
-      shell: curl -v http://{{ JenkinsDns }}:8081/buildByToken/build?job=iTrust\&token=8fc61f12b36588bf13393a30a6af61e6
+    # Checkbox Testing
+    # - name: clone the checkbox repo
+    #   git:
+    #     repo: https://github.com/chrisparnin/checkbox.io
+    #     dest: /home/ubuntu
+    
+    # - name: clone test generation repo
+    #   git:
+    #     repo: https://github.com/CSC-DevOps/TestGeneration
+    #     dest: /home/ubuntu
 
-    - pause:
-        seconds: 5
+    # - name: Copy main.js onto the Jenkins server for Checkbox test
+    #   copy:
+    #     src: '{{ item }}'
+    #     dest: '/home/ubuntu/TestGeneration/{{ item }}'
+    #     owner: ubuntu
+    #     group: ubuntu
+    #     mode: 0777
+    #   with_items:
+    #     - main.js
+
+    # - name: Copy other js files onto the Jenkins server for Checkbox test
+    #   copy:
+    #     src: '{{ item }}'
+    #     dest: '/home/ubuntu/TestGeneration/src/{{ item }}'
+    #     owner: ubuntu
+    #     group: ubuntu
+    #     mode: 0777
+    #   with_items:
+    #     - constraint.js
+    #     - testgenerator.js       
+
+    # - name: Run commands to check coverage
+    #   shell: |
+    #     npm install
+    #     node main.js
+    #     node_modules/.bin/istanbul cover test.js
+    #   chdir: /home/ubuntu/TestGeneration        
+
+    # - pause:
+    #     seconds: 10
+
+   # Rest are for iTrust in Jenkins
+    # - name: Run a iTrust build
+    #   shell: curl -v http://{{ JenkinsDns }}:8081/buildByToken/build?job=iTrust\&token=8fc61f12b36588bf13393a30a6af61e6
+
+    # - pause:
+    #     seconds: 5
 
     - name: Install python-mysqldb
       apt: name=python-mysqldb state=present
@@ -350,7 +393,10 @@
       
     - name: Run the python script
       shell: python /home/ubuntu/iTrust/fuzzer.py
-      with_sequence: count=5
+      with_sequence: count=100
+      async: 2000000
+      poll: 5
+      ignore_errors: yes
 
     - name: Run the python priortization script
       shell: python /home/ubuntu/iTrust/test_priortization.py

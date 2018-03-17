@@ -18,7 +18,7 @@ var ec2 = new AWS.EC2({apiVersion: '2016-11-15'});
 var params = 
 {
     ImageId : "ami-a22323d8",
-    InstanceType : "t2.micro",
+    InstanceType : "t2.small",
     MinCount : 1,
     MaxCount : 1,
     KeyName: 'DevOps',

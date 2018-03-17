@@ -5,6 +5,7 @@ import random
 import requests
 import time
 import subprocess
+import pymysql
 
 sha1 = ""
 
@@ -22,7 +23,7 @@ def fuzzing():
 	prob = random.randint(1,1001)
 	random.seed()
 	prob2 = random.randint(1,1001)
-	if prob2 < 500:
+	if prob2 < 1000:
 		for file_name in files:
 
 			f = open(file_name, 'r')
@@ -152,6 +153,17 @@ def main():
 		# testList.sort(key=lambda x: x[1])
 		# print(testList)
 		# print("Number of test cases failed ", str(failTestCount))
+	
+	try:
+		connection = pymysql.connect(host="127.0.0.1", user="root", password="", charset="utf8mb4", cursorclass=pymysql.cursors.DictCursor)
+		dbCursor = connection.cursor()
+		dbCursor.execute("DROP DATABASE itrust2")
+	
+	except Exception as e:
+		print("Exeception occured:{}".format(e))
+		
+	finally:
+		connection.close()
 
 if __name__ == "__main__":
 	main()
