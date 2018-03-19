@@ -61,35 +61,23 @@ function constraints(filePath) {
     // Start traversing the root node
     traverse(result, function (node) {
 
-        if (node.type === 'CallExpression' && node.callee.object && node.callee.object.name == 'app' && node.arguments[0].type == 'Literal' && node.arguments[0].value.startsWith('/api')){
-          // console.log(node.arguments);
-          if (!('api' in functionConstraints)) functionConstraints['api'] = [];
-          let expression = buf.substring(node.arguments[node.arguments.length - 1].range[0], node.arguments[node.arguments.length - 1].range[1]);
-          console.log(expression);
-          functionConstraints['api'].push({
-            url: node.arguments[0].value,
-            method: expression,
-          });
-          console.log(expression.split('.')[0]+".js");
-          a = constraints('../checkbox.io/server-side/site/routes/' + expression.split('.')[0]+".js")
-          console.log(a);
-          // return;
-        }
-
         // If some node is a function declaration, parse it for potential constraints.
-        if (node.type === 'FunctionDeclaration') {
+        if (node.type === 'ExpressionStatement' && node.expression.type === 'AssignmentExpression'
+            && node.expression.left && node.expression.left.property) {
 
+            //console.log(node.expression.left.property.name);
             // Get function name and arguments
-            let funcName = functionName(node);
-            let params = node.params.map(function(p) {return p.name});
+            let funcName = node.expression.left.property.name;//functionName(node);
+            //let params = node.params.map(function(p) {return p.name});
             let objectParams = []
 
             // Initialize function constraints
             functionConstraints[funcName] = {
-                constraints: _.zipObject(params, _.map(params, () => [])),
-                params: params
+                //constraints: _.zipObject(params, _.map(params, () => [])),
+                //params: params
             };
 
+            //console.log(funcName);
             // Traverse function node.
             traverse(node, function(child) {
 
@@ -98,77 +86,6 @@ function constraints(filePath) {
                     // console.log("here");
                     if (child.object && child.object.type ){
                       // console.log(child.object);
-                    }
-                }
-                if(_.get(child, 'type') === 'BinaryExpression' && _.includes(['!=', '!==', '==', '==='], _.get(child, 'operator'))) {
-                    if(_.get(child, 'left.type') === 'Identifier') {
-
-                        // Get identifier
-                        let ident = child.left.name;
-
-                        // Get expression from original source code:
-                        let expression = buf.substring(child.range[0], child.range[1]);
-                        let rightHand = buf.substring(child.right.range[0], child.right.range[1]);
-
-                        // Test to see if right hand is a string
-                        let match = rightHand.match(/^['"](.*)['"]$/);
-
-                        if (_.includes(params, _.get(child, 'left.name'))) {
-                          // console.log(params);
-                          // console.log(child);
-
-                            // Push a new constraints
-                            let constraints = functionConstraints[funcName].constraints[ident];
-                            constraints.push(new Constraint({
-                                ident: child.left.name,
-                                value: rightHand,
-                                funcName: funcName,
-                                kind: "integer",
-                                operator : child.operator,
-                                expression: expression
-                            }));
-                            constraints.push(new Constraint({
-                                ident: child.left.name,
-                                value: match ? `'NEQ - ${match[1]}'` : NaN,
-                                funcName: funcName,
-                                kind: "integer",
-                                operator : child.operator,
-                                expression: expression
-                            }));
-                        }
-                    }
-                }
-
-                // Handle fs.readFileSync
-                if( child.type === "CallExpression" && child.callee.property && child.callee.property.name === "readFileSync" ) {
-
-                    // Get expression from original source code:
-                    let expression = buf.substring(child.range[0], child.range[1]);
-
-                    for (let p in params) {
-                        if( child.arguments[0].name === params[p] ) {
-
-                            // Get identifier
-                            let ident = params[p];
-
-                            // Push a new constraint
-                            functionConstraints[funcName].constraints[ident].push(new Constraint({
-                                ident: params[p],
-                                value:  "'pathContent/file1'",
-                                funcName: funcName,
-                                kind: "fileWithContent",
-                                operator : child.operator,
-                                expression: expression
-                            }));
-                            functionConstraints[funcName].constraints[ident].push(new Constraint({
-                                ident: params[p],
-                                value:  "'pathContent/someDir'",
-                                funcName: funcName,
-                                kind: "fileWithContent",
-                                operator : child.operator,
-                                expression: expression
-                            }));
-                        }
                     }
                 }
 

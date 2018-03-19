@@ -8,12 +8,12 @@ const path    = require('path');
 
 
 // Local Modules
-const constraints       = require('./src/constraint');
-const generateTestCases = require('./src/testgenerator');
+const constraints       = require('./constraint.js');
+const generateTestCases = require('./testgenerator.js');
 
 
 // Polyfills
-require('./src/format-polyfill');
+require('./format-polyfill');
 
 
 
@@ -25,7 +25,7 @@ require('./src/format-polyfill');
     // Parse file input, defaulting to subject.js if not provided
     let args = process.argv.slice(2);
     if( args.length === 0 ) {
-        args = ["../checkbox.io/server-side/site/server.js"];
+        args = ["./routes/admin.js"];
     }
     let filePath = path.resolve(args[0]);
 

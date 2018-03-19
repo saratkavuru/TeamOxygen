@@ -33,106 +33,89 @@ const mockFileLibrary = {
 function generateTestCases(filepath, functionConstraints) {
 
     // Content string. This will be built up to generate the full text of the test string.
-    let content = `let subject = require('${filepath}')\nlet mock = require('mock-fs');\nlet nock = require('nock');\n`;
+    let content = `var testadmin = require('./routes/admin.js');
+    var MongoClient = require('mongodb').MongoClient;
+    var url = "mongodb://admin:password@127.0.01:27017/site?authSource=admin";
+    var mongo = require('mongodb');
+    var MongoClient = mongo.MongoClient;
+    var db = null;
+    MongoClient.connect("mongodb://"+process.env.MONGO_USER+":"+process.env.MONGO_PASSWORD+"@"+process.env.MONGO_IP+":27017/site?authSource=admin", function(err, authdb) {
+    db = authdb;
+    console.log( err || "connected!" );
+    });
+    var mongo = require('mongodb');
+    var Server = mongo.Server,
+    Db = mongo.Db,
+	ObjectID = mongo.ObjectID;\n`;
+    
+    kindValue = ['AMZN', 'SURFACE', 'IPADMINI', 'GITHUB', 'BROWSERSTACK', ''];
+    for(i=0;i<6;i++)
+    {
 
-    // Iterate over each function in functionConstraints
-    for ( let funcName in functionConstraints ) {
-        if (funcName == 'api'){
-          functionConstraints['api'].forEach(url => {
-            // handle the request here
-            // mock mongodb instance if required
-            // for get request with url parameter, generate tests
-            // else, for post request, find what is needed in req.body
-            // make the request.
-            // content += `try { ${ "subject.{0}({1});".format(funcName, args) } } catch (e) {} \n`;
-          });
-          continue;
-        }
-        // Reference all constraints for funcName.
-        let params = functionConstraints[funcName].params;
+        tokenValue = String.fromCharCode(65+i);
+        content += `\n  MongoClient.connect(url, function(err, db) {
+                if (err) throw err;
+                var dbo = db.db('sites');
+                var myobj = { _id: "`+i+`", token: "`+ tokenValue +`", status:'open', kind:"`+kindValue[i]+`"};
+                dbo.collection('studies').insertOne(myobj, function(err, res) {
+                if (err) throw err;
+                console.log('1 document inserted');
+                });
+            });
 
-        // Get constraints and map to values
-        let constraints = functionConstraints[funcName].constraints;
-        let values =  _.mapValues(constraints, (arr) => _.map(arr, c => c.value));
-
-        // Generate possible combinations of arguments
-        let argCombinations = product(..._.map(params, p => !_.isEmpty(values[p]) ? values[p] : ["''"]));
-
-        // Handle global constraints...
-        // Whether or not any constraint is of type fileWithContent of fileExists.
-        let allConstraints = _.flattenDeep(_.map(constraints));
-        let fileWithContent = _.some(allConstraints, { kind: 'fileWithContent' });
-        let pathExists      = _.some(allConstraints, { kind: 'fileExists' });
-        let reqest      = _.some(allConstraints, { kind: 'request' });
-
-        // Generate function argument strings from parameter objects.
-        for (let combination of argCombinations) {
-
-            // Get final argument string
-            let args = combination.join(', ');
-
-            // If some constraint is of type fileWithContent or pathExists
-            // Generate all combinations of file system test cases.
-            if( pathExists || fileWithContent ) {
-                content += generateMockFsTestCases(true,  true,  funcName, args);
-                content += generateMockFsTestCases(false, true,  funcName, args);
-                content += generateMockFsTestCases(true,  false, funcName, args);
-                content += generateMockFsTestCases(false, false, funcName, args);
-            }
-            // Otherwise, just generate the naive test of calling the function
-            // with default arguments and alternative arguments.
-            else {
-                content += `try { ${ "subject.{0}({1});".format(funcName, args) } } catch (e) {} \n`;
-            }
-
-        }
-
+            setTimeout(function(){
+                try {
+                    res = {send : function(param){}};
+                    req = {"params":{
+                        "id":"`+i+`",
+                        "token": "`+tokenValue+`"
+                        },
+                        "body":{
+                            "token": "`+tokenValue+`",
+                            "kind": "`+kindValue[i]+`",
+                            "email": "abc@abc.com"
+                            }};
+                    testadmin.notifyParticipant(req, res);
+                } catch (error) {
+                }
+                finally{
+                    // db.collection('studies').deleteOne({id: "`+i+`"});
+                }
+            },1000);\n`
     }
+    // Iterate over each function in functionConstraints
 
+    
+    for ( let funcName in functionConstraints ) {
+
+            if (funcName){
+                content += `setTimeout(function(){
+                    try {
+                        req = {"params":{
+                            "id":"5",
+                            "token": "F"
+                            },
+                            "body":{
+                                "token": "F"
+                                }};
+                        res = {send : function(param){}};
+                        testadmin.`+funcName+`(req, res);
+                    } catch (error) {   
+                    }
+                     }, 3000);`;
+            }
+        }
+
+        content += `setTimeout(function(){
+            try {
+                db.collection('studies').drop();
+            } catch (error) {   
+            }
+        }, 4000);`;
     // Write final content string to file test.js.
     fs.writeFileSync('test.js', content, "utf8");
 
 }
-
-
-/**
- * Generate test cases for constraints dealing with whether or not a file exists.
- *
- * @param   {Boolean} pathExists      Whether or not to mock the path existing.
- * @param   {Boolean} fileWithContent Whether or not to mock the file existing with content.
- * @param   {String}  funcName        Name of the function under test.
- * @param   {String}  args            Function argument string.
- * @returns {string}                  Full text of the generated file system test.
- */
-function generateMockFsTestCases (pathExists, fileWithContent, funcName, args) {
-
-    // Partial test data
-    let testCase = "";
-    let mergedFS = {};
-
-    // Add mock data for path if pathExists is true.
-    if( pathExists ) {
-        for (let attrname in mockFileLibrary.pathExists) {
-            mergedFS[attrname] = mockFileLibrary.pathExists[attrname];
-        }
-    }
-
-    // Add mock data for content if fileWithContent is true.
-    if( fileWithContent ) {
-        for (let attrname in mockFileLibrary.fileWithContent) {
-            mergedFS[attrname] = mockFileLibrary.fileWithContent[attrname];
-        }
-    }
-
-    // Generate and return test case string.
-    testCase += 'try{\n';
-    testCase += `\tmock(${JSON.stringify(mergedFS).replace(/"/g, '')});\n`;
-    testCase += `\t\tsubject.${funcName}(${args});\n`;
-    testCase += "\tmock.restore();\n";
-    testCase += '} catch(e) {}\n';
-    return testCase;
-}
-
 
 // Export
 module.exports = generateTestCases;
