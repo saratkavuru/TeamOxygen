@@ -93,6 +93,7 @@
         - jenkins-job-builder
         - requests
         - pymysql
+        - pymongo
 
     # - name: copy jenkins file
     #   copy:
@@ -320,53 +321,101 @@
     #   shell: curl -v http://{{ JenkinsDns }}:8081/buildByToken/build?job=checkbox\&token=8fc61f12b36588bf13393a30a6af61e6
     
     # Checkbox Testing
-    - name: Clone repos
-      shell: |
-        if [ ! -d "checkbox.io" ] ; then
-          git clone https://github.com/chrisparnin/checkbox.io
-        fi
-        if [ ! -d "TestGeneration" ] ; then
-          git clone https://github.com/CSC-DevOps/TestGeneration
-        fi
-      become: no     
 
-    - name: Install packages based on package.json.
-      npm:
-        path: /home/ubuntu/TestGeneration
-      become: no
+    - name: Mongo DB environment variables
+      include_vars: checkboxvar.yml
 
-    - name: Copy main.js onto the Jenkins server for Checkbox test
+    - name: "Import the mongo db public key from keyserver"
+      apt_key:
+        keyserver: keyserver.ubuntu.com
+        id: 2930ADAE8CAF5059EE73BB4B58712A2291FA4AD5
+    
+    - name: "Add the mongo db repository"
+      apt_repository:
+        repo: deb https://repo.mongodb.org/apt/ubuntu {{ansible_distribution_release}}/mongodb-org/3.6 multiverse
+        state: present
+        update_cache: yes
+
+    - name: "Install Mongo DB"
+      apt:
+       name: mongodb-org
+       state: present
+       update_cache: yes
+
+    - name: "Start mongodb"
+      service:
+        name: mongod
+        state: started 
+   
+    - name: "Create mongo DB user"
+      mongodb_user:
+        database: admin 
+        name: "{{ MONGO_USER }}"
+        password: "{{ MONGO_PASSWORD }}"
+        roles: 'root'
+        state: present   
+    
+    - name: Verify that the repository exists
+      stat:
+        path: /home/ubuntu/Checkbox
+      register: repo_verify
+
+    - name: Clone repository when it doesn't work
+      git:
+        repo: https://github.com/chrisparnin/checkbox.io
+        dest: /home/ubuntu/Checkbox
+      when: repo_verify.stat.exists == False
+
+    - name: Copy main.js and testgenerator.js onto the Jenkins server for Checkbox test
       copy:
         src: '{{ item }}'
-        dest: '/home/ubuntu/TestGeneration/{{ item }}'
+        dest: '/home/ubuntu/Checkbox/server-side/site/{{ item }}'
         owner: ubuntu
         group: ubuntu
         mode: 0777
       with_items:
         - main.js
-      become: no
-
-    - name: Copy other js files onto the Jenkins server for Checkbox test
+        - testgenerator.js
+        - constraint.js
+        - format-polyfill.js
+        
+    - name: Copy package.json for checkbox
       copy:
-        src: '{{ item }}'
-        dest: '/home/ubuntu/TestGeneration/src/{{ item }}'
+        src: checkbox_package
+        dest: '/home/ubuntu/Checkbox/server-side/site/package.json'
         owner: ubuntu
         group: ubuntu
         mode: 0777
-      with_items:
-        - constraint.js
-        - testgenerator.js
-      become: no   
 
-    # - name: Run commands to check coverage
-    #   shell: |
-    #     node main.js
-    #     node_modules/.bin/istanbul cover test.js
-    #   args:        
-    #     chdir: /home/ubuntu/TestGeneration       
-    #   async: 2000
-    #   poll: 5 
-    #   become: no
+    - name: Install packages based on package.json.
+      npm:
+        path: /home/ubuntu/Checkbox/server-side/site
+      state: present  
+
+    - name: Run commands to check coverage
+      shell: |
+        node main.js
+        node_modules/.bin/istanbul cover test.js
+      args:        
+        chdir: /home/ubuntu/Checkbox/server-side/site
+      environment:
+        MONGO_USER: "{{ MONGO_USER }}"
+        MONGO_PASSWORD: "{{ MONGO_PASSWORD }}"
+        MONGO_IP: "{{ MONGO_IP }}"
+        MONGO_PORT: "{{ MONGO_PORT }}"  
+        MAIL_USER: "{{ MAIL_USER }}" 
+        MAIL_PASSWORD: "{{ MAIL_PASSWORD }}" 
+        MAIL_SMTP: "{{ MAIL_SMTP }}" 
+      async: 2000
+      poll: 5 
+      ignore_errors: yes
+    
+    - name: Fetch the coverage report
+      synchronize:
+        src: /home/ubuntu/Checkbox/server-side/site/coverage
+        dest: ../
+        mode: pull
+        recursive: yes   
 
     # - pause:
     #     seconds: 10
@@ -410,5 +459,5 @@
 
     # - name: Run the python priortization script
     #   shell: python /home/ubuntu/iTrust/test_priortization.py
-        
+
 ...
