@@ -46,7 +46,71 @@ function generateTestCases(filepath, functionConstraints) {
     var mongo = require('mongodb');
     var Server = mongo.Server,
     Db = mongo.Db,
-	ObjectID = mongo.ObjectID;\n`;
+    ObjectID = mongo.ObjectID;
+    var rewire = require('rewire');
+    var chai = require('chai');
+    var should = chai.should();
+    var testcsv = rewire('./routes/csv.js');
+    
+    formatJsonAsCSV = testcsv.__get__('formatJsonAsCSV'); 
+
+    try {
+        var items = {
+            votes: [{ 
+                        answers: [{
+                            kind: "singlechoice",
+                            answer: "yes",
+                            question: "name please\n? "
+                        },
+                        {
+                            kind: "singlechoicetable",
+                            answer: "yes",
+                            question: "name please\n? "
+                        },
+                        {
+                            kind: "textarea",
+                            answer: "yes",
+                            question: "name please\n? "
+                        },
+                        {
+                            kind: "text",
+                            answer: "yes",
+                            question: "name please\n? "
+                        },
+                        {
+                            kind: "",
+                            answer: "yes",
+                            question: "name please\n? "
+                        },
+                        {
+                            kind: "singlechoicetable",
+                            answer: "no",
+                            question: "name please\n? "
+                        }
+                        ]}]
+        };
+        formatJsonAsCSV(items);
+        var items = {
+            votes: [{ 
+                        answers: [{
+                            kind: "singlechoice"
+                        },
+                        {
+                            kind: "singlechoicetable",
+                            answer: "yes"
+                        },
+                        {
+                            kind: ""
+                        },
+                        {
+                            kind: "singlechoicetable",
+                            answer: "no"
+                        }
+                        ]}]
+        };
+        formatJsonAsCSV(items);
+    } catch (error) { }
+    \n`;
     
     kindValue = ['AMZN', 'SURFACE', 'IPADMINI', 'GITHUB', 'BROWSERSTACK', ''];
     for(i=0;i<6;i++)
