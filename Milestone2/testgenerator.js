@@ -60,32 +60,32 @@ function generateTestCases(filepath, functionConstraints) {
                         answers: [{
                             kind: "singlechoice",
                             answer: "yes",
-                            question: "name please\n? "
+                            question: "name please\\n"
                         },
                         {
                             kind: "singlechoicetable",
                             answer: "yes",
-                            question: "name please\n? "
+                            question: "name please\\n"
                         },
                         {
                             kind: "textarea",
                             answer: "yes",
-                            question: "name please\n? "
+                            question: "name please\\n"
                         },
                         {
                             kind: "text",
                             answer: "yes",
-                            question: "name please\n? "
+                            question: "name please\\n"
                         },
                         {
                             kind: "",
                             answer: "yes",
-                            question: "name please\n? "
+                            question: "name please\\n"
                         },
                         {
                             kind: "singlechoicetable",
                             answer: "no",
-                            question: "name please\n? "
+                            question: "name please\\n"
                         }
                         ]}]
         };
