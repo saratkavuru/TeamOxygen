@@ -6,7 +6,7 @@
 # https://jjasghar.github.io/blog/2016/01/03/getting-jenkins-and-jenkins-job-builder-running/
 # https://stackoverflow.com/questions/23769478/how-to-change-port-for-jenkins-window-service-when-8080-is-being-used
 #
-# ansible-playbook  --ask-vault-pass JenkinsConfig.yml -i inventory -vvv
+# ansible-playbook  --ask-vault-pass BuildAndTestAnalysis.yml -i inventory -vvv
 
 - hosts: Jenkins
   become: yes
@@ -322,6 +322,9 @@
         dest: ../
         mode: pull
         recursive: yes   
+
+    - name: Drop studies
+      shell: mongo sites --eval "db.studies.drop()"  
 
     - pause:
         seconds: 10
