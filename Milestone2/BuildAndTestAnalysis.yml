@@ -358,13 +358,38 @@
       environment:
         MONGO_USER: "{{ MONGO_USER }}"
         MONGO_PASSWORD: "{{ MONGO_PASSWORD }}"
-        MONGO_IP: "{{ JenkinsDns }}"
+        MONGO_IP: "{{ MONGO_IP }}"
         MONGO_PORT: "{{ MONGO_PORT }}"  
         MAIL_USER: "{{ MAIL_USER }}" 
         MAIL_PASSWORD: "{{ MAIL_PASSWORD }}" 
         MAIL_SMTP: "{{ MAIL_SMTP }}" 
         
-    
+    - name: "Generate test.js"
+      command: nodejs main.js  
+      args:
+        chdir: /home/ubuntu/Checkbox/server-side/site
+      environment:
+        MONGO_USER: "{{ MONGO_USER }}"
+        MONGO_PASSWORD: "{{ MONGO_PASSWORD }}"
+        MONGO_IP: "{{ MONGO_IP }}"
+        MONGO_PORT: "{{ MONGO_PORT }}"  
+        MAIL_USER: "{{ MAIL_USER }}" 
+        MAIL_PASSWORD: "{{ MAIL_PASSWORD }}" 
+        MAIL_SMTP: "{{ MAIL_SMTP }}" 
+            
+    - name: "Run the tests"
+      command: nodejs test.js  
+      args:
+        chdir: /home/ubuntu/Checkbox/server-side/site
+      environment:
+        MONGO_USER: "{{ MONGO_USER }}"
+        MONGO_PASSWORD: "{{ MONGO_PASSWORD }}"
+        MONGO_IP: "{{ MONGO_IP }}"
+        MONGO_PORT: "{{ MONGO_PORT }}"  
+        MAIL_USER: "{{ MAIL_USER }}" 
+        MAIL_PASSWORD: "{{ MAIL_PASSWORD }}" 
+        MAIL_SMTP: "{{ MAIL_SMTP }}" 
+        
     # - name: Fetch the coverage report
     #   synchronize:
     #     src: /home/ubuntu/Checkbox/server-side/site/coverage

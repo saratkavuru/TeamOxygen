@@ -32,6 +32,7 @@
     "sinon-mongoose": "^2.0.2",
     "underscore": "^1.8.3",
     "validator": "^6.2.1",
-    "request": "^2.85.0"
+    "request": "^2.85.0",
+    "lodash.product":"^18.1.16"
   }
 }
