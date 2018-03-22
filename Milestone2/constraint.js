@@ -61,6 +61,22 @@ function constraints(filePath) {
     // Start traversing the root node
     traverse(result, function (node) {
 
+        if (node.type === 'CallExpression' && node.callee.object && node.callee.object.name == 'app' && node.arguments[0].type == 'Literal' && node.arguments[0].value.startsWith('/api')){
+          // console.log(node.arguments);
+          if (!('api' in functionConstraints)) functionConstraints['api'] = [];
+          let expression = buf.substring(node.arguments[node.arguments.length - 1].range[0], node.arguments[node.arguments.length - 1].range[1]);
+          // console.log(expression);
+          functionConstraints['api'].push({
+            url: node.arguments[0].value,
+            method: expression,
+            type: node.callee.property.name,
+          });
+          // console.log(expression.split('.')[0]+".js");
+          // var a = constraints('../checkbox.io/server-side/site/routes/' + expression.split('.')[0]+".js")
+          // console.log(a);
+          // return;
+        }
+
         // If some node is a function declaration, parse it for potential constraints.
         if (node.type === 'ExpressionStatement' && node.expression.type === 'AssignmentExpression'
             && node.expression.left && node.expression.left.property) {

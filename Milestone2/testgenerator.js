@@ -36,7 +36,6 @@ function generateTestCases(filepath, functionConstraints) {
     let content = `var testadmin = require('./routes/admin.js');
     var MongoClient = require('mongodb').MongoClient;
     var url = "mongodb://admin:password@127.0.01:27017/site?authSource=admin";
-    var mongo = require('mongodb');
     var MongoClient = mongo.MongoClient;
     var db = null;
     MongoClient.connect("mongodb://"+process.env.MONGO_USER+":"+process.env.MONGO_PASSWORD+"@"+process.env.MONGO_IP+":27017/site?authSource=admin", function(err, authdb) {
@@ -51,12 +50,13 @@ function generateTestCases(filepath, functionConstraints) {
     var chai = require('chai');
     var should = chai.should();
     var testcsv = rewire('./routes/csv.js');
-    
-    formatJsonAsCSV = testcsv.__get__('formatJsonAsCSV'); 
+    var request = require('request');
+
+    formatJsonAsCSV = testcsv.__get__('formatJsonAsCSV');
 
     try {
         var items = {
-            votes: [{ 
+            votes: [{
                         answers: [{
                             kind: "singlechoice",
                             answer: "yes",
@@ -91,7 +91,7 @@ function generateTestCases(filepath, functionConstraints) {
         };
         formatJsonAsCSV(items);
         var items = {
-            votes: [{ 
+            votes: [{
                         answers: [{
                             kind: "singlechoice"
                         },
@@ -111,7 +111,7 @@ function generateTestCases(filepath, functionConstraints) {
         formatJsonAsCSV(items);
     } catch (error) { }
     \n`;
-    
+
     kindValue = ['AMZN', 'SURFACE', 'IPADMINI', 'GITHUB', 'BROWSERSTACK', ''];
     for(i=0;i<6;i++)
     {
@@ -149,10 +149,34 @@ function generateTestCases(filepath, functionConstraints) {
     }
     // Iterate over each function in functionConstraints
 
-    
-    for ( let funcName in functionConstraints ) {
 
-            if (funcName){
+    for ( let funcName in functionConstraints ) {
+            if (funcName == 'api') {
+              for (var api in funcName){
+                content += `setTimeout(function(){
+                    try {
+                        req = {"params":{
+                            "id":"5",
+                            "token": "F"
+                            },
+                            "body":{
+                                "token": "F"
+                                }};
+                        res = {send : function(param){}};
+                        var options = {
+                          url: 'http://127.0.0.1/`+api['url']+`',
+                          method: '`+ api['type']+`',
+                          json: req,
+                        };
+                        request.post(options , function(error, response, body){
+                          console.log(response.status);
+                        });
+                    } catch (error) {
+                    }
+                     }, 3000);`;
+                 }
+            }
+            else if (funcName){
                 content += `setTimeout(function(){
                     try {
                         req = {"params":{
@@ -164,7 +188,7 @@ function generateTestCases(filepath, functionConstraints) {
                                 }};
                         res = {send : function(param){}};
                         testadmin.`+funcName+`(req, res);
-                    } catch (error) {   
+                    } catch (error) {
                     }
                      }, 3000);`;
             }
@@ -173,7 +197,7 @@ function generateTestCases(filepath, functionConstraints) {
         content += `setTimeout(function(){
             try {
                 db.collection('studies').drop();
-            } catch (error) {   
+            } catch (error) {
             }
         }, 4000);`;
     // Write final content string to file test.js.
