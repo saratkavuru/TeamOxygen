@@ -50,6 +50,7 @@
         - apt-transport-https
         - python-pip
         - maven
+        - nginx
 
     - name: Add Jenkins apt repository key.
       apt_key:
@@ -125,8 +126,11 @@
         file: creds.yml
       no_log: true   
 
-    - include_vars:
-        file: dns.yml
+    - name: "Include variables from var files"
+      include_vars: "{{ item }}"
+      with_items:
+        - checkboxvar.yml
+        - dns.yml
     
     - name: Get the contents of admin password file
       action: command cat /var/lib/jenkins/secrets/initialAdminPassword
@@ -228,6 +232,81 @@
 
     # Checkbox Testing
 
+   
+    
+    - name: Verify that the repository exists
+      stat:
+        path: /home/ubuntu/Checkbox
+      register: repo_verify
+
+    - name: Clone repository when it doesn't work
+      git:
+        repo: https://github.com/goeltanmay/checkbox.io.git
+        dest: /home/ubuntu/Checkbox
+        clone: yes
+      when: repo_verify.stat.exists == False
+
+    - name: "Modify default file to change location of public html"
+      lineinfile:
+        path: /home/ubuntu/Checkbox/local-conf/default
+        regexp: '^(.*)root /Users/gameweld/bitbucket/checkbox.io/checkbox.io/public_html/;$'
+        line: 'root /home/ubuntu/Checkbox/public_html/;'
+
+    - name: "Modify nginx file to change IP"
+      lineinfile:
+        path: /home/ubuntu/Checkbox/local-conf/nginx.conf
+        regexp: '^(.*)server 127.0.0.1:3002;$'
+        line: 'server {{ JenkinsDns }}:3002;'
+ 
+    - name: Copy main.js and testgenerator.js onto the Jenkins server for Checkbox test
+      copy:
+        src: '{{ item }}'
+        dest: '/home/ubuntu/Checkbox/server-side/site/{{ item }}'
+        owner: ubuntu
+        group: ubuntu
+        mode: 0777
+      with_items:
+        - main.js
+        - testgenerator.js
+        - constraint.js
+        - format-polyfill.js
+        
+    - name: "Replace default template"
+      copy:
+        remote_src: True
+        src: /home/ubuntu/Checkbox/local-conf/default
+        dest: /etc/nginx/sites-available/default
+        owner: root
+        group: root
+        mode: 0600
+    
+    - name: "Replace nginx template"
+      copy:
+        remote_src: True
+        src: /home/ubuntu/Checkbox/local-conf/nginx.conf
+        dest: /etc/nginx/nginx.conf
+        owner: root
+        group: root
+        mode: 0600
+    
+    - name: "Start nginx"
+      service:
+        name: nginx
+        state: started
+
+    - name: Copy package.json for checkbox
+      copy:
+        src: checkbox_package
+        dest: '/home/ubuntu/Checkbox/server-side/site/package.json'
+        owner: ubuntu
+        group: ubuntu
+        mode: 0777
+
+    - name: Install packages based on package.json.
+      npm:
+        path: /home/ubuntu/Checkbox/server-side/site
+      state: present  
+   
     - name: Mongo DB environment variables
       include_vars: checkboxvar.yml
 
@@ -260,106 +339,76 @@
         password: "{{ MONGO_PASSWORD }}"
         roles: 'root'
         state: present   
-    
-    - name: Verify that the repository exists
-      stat:
-        path: /home/ubuntu/Checkbox
-      register: repo_verify
 
-    - name: Clone repository when it doesn't work
-      git:
-        repo: https://github.com/chrisparnin/checkbox.io
-        dest: /home/ubuntu/Checkbox
-      when: repo_verify.stat.exists == False
-
-    - name: Copy main.js and testgenerator.js onto the Jenkins server for Checkbox test
-      copy:
-        src: '{{ item }}'
-        dest: '/home/ubuntu/Checkbox/server-side/site/{{ item }}'
-        owner: ubuntu
-        group: ubuntu
-        mode: 0777
-      with_items:
-        - main.js
-        - testgenerator.js
-        - constraint.js
-        - format-polyfill.js
-        
-    - name: Copy package.json for checkbox
-      copy:
-        src: checkbox_package
-        dest: '/home/ubuntu/Checkbox/server-side/site/package.json'
-        owner: ubuntu
-        group: ubuntu
-        mode: 0777
-
-    - name: Install packages based on package.json.
+    - name: "Restart nginx"
+      service:
+        name: nginx
+        state: restarted
+   
+    - name: "Install forever.js with npm"
       npm:
-        path: /home/ubuntu/Checkbox/server-side/site
-      state: present  
+        name: forever
+        global: yes
+        state: present
 
-    - name: Run commands to check coverage
-      shell: |
-        node main.js
-        node_modules/.bin/istanbul cover test.js
-      args:        
+    - name: "Start the server"
+      command: forever start server.js  
+      args:
         chdir: /home/ubuntu/Checkbox/server-side/site
       environment:
         MONGO_USER: "{{ MONGO_USER }}"
         MONGO_PASSWORD: "{{ MONGO_PASSWORD }}"
-        MONGO_IP: "{{ MONGO_IP }}"
+        MONGO_IP: "{{ JenkinsDns }}"
         MONGO_PORT: "{{ MONGO_PORT }}"  
         MAIL_USER: "{{ MAIL_USER }}" 
         MAIL_PASSWORD: "{{ MAIL_PASSWORD }}" 
         MAIL_SMTP: "{{ MAIL_SMTP }}" 
-      async: 2000
-      poll: 5 
-      ignore_errors: yes
+        
     
-    - name: Fetch the coverage report
-      synchronize:
-        src: /home/ubuntu/Checkbox/server-side/site/coverage
-        dest: ../
-        mode: pull
-        recursive: yes   
+    # - name: Fetch the coverage report
+    #   synchronize:
+    #     src: /home/ubuntu/Checkbox/server-side/site/coverage
+    #     dest: ../
+    #     mode: pull
+    #     recursive: yes   
 
-    - name: Drop studies
-      shell: mongo sites --eval "db.studies.drop()"  
+    # - name: Drop studies
+    #   shell: mongo sites --eval "db.studies.drop()"  
 
-    - pause:
-        seconds: 10
+    # - pause:
+    #     seconds: 10
 
-    - name: Install python-mysqldb
-      apt: name=python-mysqldb state=present
-      become: true
+    # - name: Install python-mysqldb
+    #   apt: name=python-mysqldb state=present
+    #   become: true
     
-    - name: Install sql-server
-      apt: name=mysql-server state=present
-      become: true
+    # - name: Install sql-server
+    #   apt: name=mysql-server state=present
+    #   become: true
     
-    - name: To accept lower case table names in mysql
-      lineinfile:
-        path: /etc/mysql/my.cnf
-        regexp: "skip-external-locking"
-        insertafter: "skip-external-locking"
-        line: "lower_case_table_names=1"
-      become: true
+    # - name: To accept lower case table names in mysql
+    #   lineinfile:
+    #     path: /etc/mysql/my.cnf
+    #     regexp: "skip-external-locking"
+    #     insertafter: "skip-external-locking"
+    #     line: "lower_case_table_names=1"
+    #   become: true
     
-    - name: restart mysql
-      shell: sudo service mysql restart
+    # - name: restart mysql
+    #   shell: sudo service mysql restart
     
-    - name: wait for my-sql to start
-      wait_for: port=3306
-      become: true
+    # - name: wait for my-sql to start
+    #   wait_for: port=3306
+    #   become: true
       
-    - name: Run the python script
-      shell: python /home/ubuntu/iTrust/fuzzer.py
-      with_sequence: count=100
-      async: 2000000
-      poll: 5
-      ignore_errors: yes
+    # - name: Run the python script
+    #   shell: python /home/ubuntu/iTrust/fuzzer.py
+    #   with_sequence: count=100
+    #   async: 2000000
+    #   poll: 5
+    #   ignore_errors: yes
 
-    - name: Run the python priortization script
-      shell: python /home/ubuntu/iTrust/test_priortization.py
+    # - name: Run the python priortization script
+    #   shell: python /home/ubuntu/iTrust/test_priortization.py
 
 ...
