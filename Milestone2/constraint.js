@@ -70,6 +70,7 @@ function constraints(filePath) {
             url: node.arguments[0].value,
             method: expression,
             type: node.callee.property.name,
+            file: expression.split('.')[0]+'.js',
           });
           // console.log(expression.split('.')[0]+".js");
           // var a = constraints('../checkbox.io/server-side/site/routes/' + expression.split('.')[0]+".js")
