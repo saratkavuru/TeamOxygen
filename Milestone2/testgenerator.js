@@ -166,8 +166,8 @@ function generateTestCases(filepath, functionConstraints) {
                                 }};
                         res = {send : function(param){}};
                         var options = {
-                          url: 'http://127.0.0.1/`+api['url']+`',
-                          method: '`+ api['type']+`',
+                          url: 'http://127.0.0.1/`+api.url+`',
+                          method: '`+ api.type +`',
                           json: req,
                         };
                         request.post(options , function(error, response, body){
