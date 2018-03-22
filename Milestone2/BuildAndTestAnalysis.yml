@@ -373,7 +373,7 @@
     #     recursive: yes   
 
     # - name: Drop studies
-    #   shell: mongo sites --eval "db.studies.drop()"  
+    #   shell: mongo site --eval "db.studies.drop()"  
 
     # - pause:
     #     seconds: 10

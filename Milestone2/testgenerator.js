@@ -3,6 +3,7 @@ const product = require('iter-tools/lib/product');
 const fs      = require("fs");
 const mock    = require('mock-fs');
 const _       = require('lodash');
+require('lodash.product');
 
 
 
@@ -36,7 +37,6 @@ function generateTestCases(filepath, functionConstraints) {
     let content = `var testadmin = require('./routes/admin.js');
     var MongoClient = require('mongodb').MongoClient;
     var url = "mongodb://admin:password@127.0.01:27017/site?authSource=admin";
-    var MongoClient = mongo.MongoClient;
     var db = null;
     MongoClient.connect("mongodb://"+process.env.MONGO_USER+":"+process.env.MONGO_PASSWORD+"@"+process.env.MONGO_IP+":27017/site?authSource=admin", function(err, authdb) {
     db = authdb;
@@ -113,13 +113,17 @@ function generateTestCases(filepath, functionConstraints) {
     \n`;
 
     kindValue = ['AMZN', 'SURFACE', 'IPADMINI', 'GITHUB', 'BROWSERSTACK', ''];
+    inviteCode = ['RESEARCH', 'ESEARCH'];
+    studyKind = ['survey', 'dataStudy', 'survey'];
+    inviteCodestudyKind = _.product(inviteCode, studyKind);
+
     for(i=0;i<6;i++)
     {
 
         tokenValue = String.fromCharCode(65+i);
         content += `\n  MongoClient.connect(url, function(err, db) {
                 if (err) throw err;
-                var dbo = db.db('sites');
+                var dbo = db.db('site');
                 var myobj = { _id: "`+i+`", token: "`+ tokenValue +`", status:'open', kind:"`+kindValue[i]+`"};
                 dbo.collection('studies').insertOne(myobj, function(err, res) {
                 if (err) throw err;
@@ -139,13 +143,44 @@ function generateTestCases(filepath, functionConstraints) {
                             "kind": "`+kindValue[i]+`",
                             "email": "abc@abc.com"
                             }};
-                    testadmin.notifyParticipant(req, res);
+                    var options = {
+                        url: 'http://127.0.0.1:3002/api/study/admin/notify/',
+                        method: 'POST',
+                        json: req.body,
+                    };
+                    request.post(options , function(error, response, body){
+                        //console.log(error);
+                    });
                 } catch (error) {
                 }
                 finally{
                     // db.collection('studies').deleteOne({id: "`+i+`"});
                 }
-            },1000);\n`
+            },1000);\n
+            
+            setTimeout(function(){
+                try {
+                    res = {send : function(param){}};
+                    req = {
+                        "body":{
+                            "invitecode": "`+inviteCodestudyKind[i][0]+`",
+                            "studyKind": "`+inviteCodestudyKind[i][1]+`"
+                            }};
+                    // testadmin.createStudy(req, res);
+                    var options = {
+                            url: 'http://127.0.0.1:3002/api/study/create',
+                            method: 'POST',
+                            json: req.body,
+                        };
+                        request.post(options , function(error, response, body){
+                           // console.log(error);
+                        });
+                } catch (error) {
+                }
+                finally{
+                    // db.collection('studies').deleteOne({id: "`+i+`"});
+                }
+            },1500);\n`
     }
     // Iterate over each function in functionConstraints
 
@@ -156,6 +191,7 @@ function generateTestCases(filepath, functionConstraints) {
               console.log(functionConstraints[funcName]);
               for (var i = 0; i < functionConstraints[funcName].length; i++){
                 api = functionConstraints[funcName][i];
+                console.log(api);
                 if (api.file == 'admin.js')
                 {
                         content += `setTimeout(function(){
@@ -169,12 +205,12 @@ function generateTestCases(filepath, functionConstraints) {
                                     }};
                             res = {send : function(param){}};
                             var options = {
-                            url: 'http://127.0.0.1:3002/`+api.url+`',
+                            url: 'http://127.0.0.1:3002`+api.url+`',
                             method: '`+ api.type.toUpperCase() +`',
-                            json: req,
+                            json: req.body,
                             };
                             request.post(options , function(error, response, body){
-                            console.log(response.status);
+                            //console.log(response.status);
                             });
                         } catch (error) {
                         }
@@ -202,10 +238,11 @@ function generateTestCases(filepath, functionConstraints) {
 
         content += `setTimeout(function(){
             try {
-                db.collection('studies').drop();
+                //db.collection('studies').drop();
+                process.exit();
             } catch (error) {
             }
-        }, 4000);`;
+        }, 5000);`;
     // Write final content string to file test.js.
     fs.writeFileSync('test.js', content, "utf8");
 
