@@ -156,28 +156,31 @@ function generateTestCases(filepath, functionConstraints) {
               console.log(functionConstraints[funcName]);
               for (var i = 0; i < functionConstraints[funcName].length; i++){
                 api = functionConstraints[funcName][i];
-                content += `setTimeout(function(){
-                    try {
-                        req = {"params":{
-                            "id":"5",
-                            "token": "F"
-                            },
-                            "body":{
+                if (api.file == 'admin.js')
+                {
+                        content += `setTimeout(function(){
+                        try {
+                            req = {"params":{
+                                "id":"5",
                                 "token": "F"
-                                }};
-                        res = {send : function(param){}};
-                        var options = {
-                          url: 'http://127.0.0.1:3002/`+api.url+`',
-                          method: '`+ api.type.toUpperCase() +`',
-                          json: req,
-                        };
-                        request.post(options , function(error, response, body){
-                          console.log(response.status);
-                        });
-                    } catch (error) {
+                                },
+                                "body":{
+                                    "token": "F"
+                                    }};
+                            res = {send : function(param){}};
+                            var options = {
+                            url: 'http://127.0.0.1:3002/`+api.url+`',
+                            method: '`+ api.type.toUpperCase() +`',
+                            json: req,
+                            };
+                            request.post(options , function(error, response, body){
+                            console.log(response.status);
+                            });
+                        } catch (error) {
+                        }
+                        }, 3000);`;
                     }
-                     }, 3000);`;
-                 }
+                }   
             }
             else if (funcName){
                 content += `setTimeout(function(){
