@@ -152,7 +152,9 @@ function generateTestCases(filepath, functionConstraints) {
 
     for ( let funcName in functionConstraints ) {
             if (funcName == 'api') {
-              for (var api in funcName){
+              console.log("In the api generator");
+              console.log(functionConstraints[funcName]);
+              for (var api in functionConstraints[funcName]){
                 content += `setTimeout(function(){
                     try {
                         req = {"params":{
