@@ -32,3 +32,16 @@
 - The ansible-playbook [milestone2.yml](../Milestone2/milestone2.yml) is an outer level playbook which executes node.yml and BuildAndTestAnalysis.yml playbook and thus automating the entire Milestone 2 to a single step.
 
  ### Experience:
+Fuzzing changes the source code and helps to analyze the weak points in our testing as well as the source code. If a change in the source code and test pass successfully can mean that there is a missing test case which needs to be rectify. With this milestone we also saw that. In many cases where the build was successful even after fuzzing.
+After doing the test prioritization, we came to see some set of failures which are very common or prone to fuzzing or test case failure. The test case which we frequently observe are APIDiagnosisTest and PasswordChangeTest.
+As disscussed above, the fuzzer helps to find out the missing test cases which can lead to successful build even though it shouldn't.
+The fuzzing helps to prioritize the test case. Extending fuzzing with AI can help improve the prioritization of the test cases more intelligently. For an example, it can help to choose better probability distribution for each type of fuzzing.
+There can be multiple reasons for test to be ranked higher. The time elapsed can affect the system. It is often observed that it is one of the major causes. As we build more and more, it required more memory which leads to swapping to disk and slows down the system. After a certain threshold of the system, the system is also not able to allocate any memory as all the meory is being used up. This lead us to change the instance with better memory (both primary and secondar memeory) and processor. Other reason can be the number of times the test case that fails. Suppose one test case fails every now and then and obviously will lead to ranked higher in test prioritiation analysis.
+#### Approach for Automated Test Generation:
+First, we looked up at what all we can test and how we can test. After having a lot of difficulty in understanding, we started writing test cases manually in test.js and using istanbul to check coverage. While writing the manual test.js we realize that we can automate those using esprima. Using esprima online tool helped us o find out the AST patten, through which we generate a dictionary which contains all the useful information like function name, file name, the url to hit and type of request (GET/ POST). With the help of this dictionary and the experience of manual test.js we were able to generate the test automatically using testgenerator.js by generating data and calling the url automatically. But this we use istanbul-middleware to check the coverage on the server side.
+After, the tiring session with Checkbox understanding and shouting on each other, we were finally able to reach aprroximately 50% coverage. :-)
+ ### Screenshots:
+
+ - __Coverage Summary__ 
+
+ ![alt text](../Milestone2/screenshots/checkbox/Overallcoverage.png "High Level Coverage Summary")
