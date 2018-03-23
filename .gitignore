@@ -1,8 +1,12 @@
 *.log
 .vagrant
-creds.yml
-node_modules
+*/creds.yml
+*/node_modules
 *.retry
-Milestone1/inventory
+*/inventory
 *.pem
-Milestone1/dns.yml
+*/dns.yml
+*/package-lock.json
+*/checkbox.io
+*/TestGeneration
+*/coverage  

@@ -1,0 +1,48 @@
+#https://docs.openstack.org/infra/jenkins-job-builder/publishers.html#publishers.post-tasks
+
+- job:
+    name: iTrust
+    project-type: freestyle
+    description: 'iTrust'
+    retry-count: 3
+    auth-token: 8fc61f12b36588bf13393a30a6af61e6
+    wrappers:
+      - inject:
+            properties-content: |
+                username = {{ git_username }}
+                password = {{ git_password }}
+    builders:
+        - shell: |
+                if [ ! -d "iTrust2-v1" ] ; then
+                    git clone "https://$username:$password@github.ncsu.edu/engr-csc326-staff/iTrust2-v1"
+                    cd iTrust2-v1/iTrust2
+                    cp src/main/java/db.properties.template src/main/java/db.properties
+                    cp src/main/resources/hibernate.properties.template src/main/resources/hibernate.properties
+                    cp src/main/java/email.properties.template src/main/java/email.properties
+                else
+                    cd /var/lib/jenkins/jobs/iTrust/workspace/iTrust2-v1/iTrust2
+                    mvn clean test verify checkstyle:checkstyle
+                fi
+    publishers:
+        # - post-tasks:
+        #     - matches:
+        #         - log-text:
+        #           operator: AND
+        #       escalate-status: false
+        #       run-if-job-successful: true
+        #       script: |
+        #         cd /home/ubuntu/iTrust
+        #         export AWSAccessKeyId={{ AWSAccessKeyId }}
+        #         export AWSSecretKey={{ AWSSecretKey }}
+        #         echo "" > inventory
+        #         echo "" > dns.yml
+        #         nodejs aws.js iTrust
+        #         sleep 45s
+        #         ansible-playbook iTrust.yml -i inventory -vvv
+        - jacoco:
+            exec-pattern: '**/**.exec'
+            class-pattern: '**/classes'
+            source-pattern: '**/src/main/java'
+            update-build-status: false
+            inclusion-pattern: '**/*.class'
+            exclusion-pattern: '**/*Test*.class'

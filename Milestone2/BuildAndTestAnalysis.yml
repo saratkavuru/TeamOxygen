@@ -1,0 +1,439 @@
+---
+# References:
+#
+# https://tecadmin.net/install-jenkins-in-ubuntu/
+# https://github.com/geerlingguy/ansible-role-jenkins/blob/master/handlers/main.yml
+# https://jjasghar.github.io/blog/2016/01/03/getting-jenkins-and-jenkins-job-builder-running/
+# https://stackoverflow.com/questions/23769478/how-to-change-port-for-jenkins-window-service-when-8080-is-being-used
+#
+# ansible-playbook  --ask-vault-pass BuildAndTestAnalysis.yml -i inventory -vvv
+
+- hosts: Jenkins
+  become: yes
+  
+  vars:
+    - jenkins_repo_url: deb https://pkg.jenkins.io/debian binary/
+    - jenkins_repo_key_url: https://pkg.jenkins.io/debian/jenkins.io.key
+    - jenkins_pkg_url: https://pkg.jenkins.io/debian/binary
+    - jenkins_init_file: /etc/default/jenkins
+    - jenkins_http_port_param: HTTP_PORT
+    - jenkins_java_options_env_var: JAVA_ARGS
+    - jenkins_version: 2.60
+    - jenkins_package_state: present
+    - jenkins_jar_location: /opt/jenkins-cli.jar
+    - jenkins_params:
+        url_username: admin
+        url: http://{{ JenkinsDns }}:8081
+  
+  tasks:
+    - name: Install add-apt-repostory
+      apt: name=software-properties-common state=latest
+
+    - name: Add Oracle Java Repository
+      apt_repository: repo='ppa:webupd8team/java'
+
+    - name: Accept Java 8 License
+      debconf: name='oracle-java8-installer' question='shared/accepted-oracle-license-v1-1' value='true' vtype='select'
+
+    - name: install dependencies
+      apt:
+        pkg: "{{ item }}"
+        state: installed
+        update_cache: true
+        cache_valid_time: 500000
+      with_items:
+        - git
+        - oracle-java8-installer
+        - ca-certificates
+        - oracle-java8-set-default
+        - curl
+        - apt-transport-https
+        - python-pip
+        - maven
+        - nginx
+
+    - name: Add Jenkins apt repository key.
+      apt_key:
+        url: "{{ jenkins_repo_key_url }}"
+        state: present
+
+    - name: Add Jenkins apt repository.
+      apt_repository:
+        repo: "{{ jenkins_repo_url }}"
+        state: present
+        update_cache: yes
+      when: jenkins_repo_url != ''
+
+    - name: Download specific Jenkins version.
+      get_url:
+        url: "{{ jenkins_pkg_url }}/jenkins_{{ jenkins_version }}_all.deb"
+        dest: "/tmp/jenkins_{{ jenkins_version }}_all.deb"
+      when: jenkins_version is defined
+
+    - name: Check if we downloaded a specific version of Jenkins.
+      stat:
+        path: "/tmp/jenkins_{{ jenkins_version }}_all.deb"
+      register: specific_version
+      when: jenkins_version is defined
+
+    - name: Install our specific version of Jenkins.
+      apt:
+        deb: "/tmp/jenkins_{{ jenkins_version }}_all.deb"
+        state: installed
+      when: jenkins_version is defined and specific_version.stat.exists
+
+    - name: Ensure Jenkins is installed.
+      apt:
+        name: jenkins
+        state: "{{ jenkins_package_state }}"
+
+    - name: install pip dependencies
+      pip:
+        name: "{{ item }}" 
+      with_items:
+        - jenkins-job-builder
+        - requests
+        - pymysql
+        - pymongo
+
+    - name: copy jenkins file
+      copy:
+        src: jenkins
+        dest: /etc/default/jenkins
+
+    - name: Restart jenkins
+      service: name=jenkins state=restarted
+
+    - name: Add nodesource apt key
+      shell: curl -s https://deb.nodesource.com/gpgkey/nodesource.gpg.key | apt-key add -
+
+    - name: Install the nodejs LTS repos
+      apt_repository:
+        repo: deb https://deb.nodesource.com/node_9.x {{ ansible_distribution_release }} main
+        state: present
+        update_cache: yes
+
+    - name: Install nodejs and npm
+      apt:
+        pkg: "{{ item }}"
+        state: present
+        update_cache: true
+      with_items:
+       - nodejs
+
+    - name: Include vars from the vault
+      include_vars:
+        file: creds.yml
+      no_log: true   
+
+    - name: "Include variables from var files"
+      include_vars: "{{ item }}"
+      with_items:
+        - checkboxvar.yml
+        - dns.yml
+    
+    - name: Get the contents of admin password file
+      action: command cat /var/lib/jenkins/secrets/initialAdminPassword
+      register: out
+      changed_when: "'z' in out.stdout"
+
+    - name: Save the admin password to a variable
+      set_fact:
+        admin_password: "{{ out.stdout_lines[0] }}"
+
+    - name: copy jenkins config
+      copy:
+        src: ./config.xml
+        dest: /var/lib/jenkins/config.xml
+
+    - name: create a directory for iTrust
+      file:
+        path: /home/ubuntu/iTrust
+        state: directory
+        owner: jenkins
+        group: jenkins
+        mode: 0755
+
+    - name: Copy important files onto the Jenkins server for iTrust
+      copy:
+        src: '{{ item }}'
+        dest: '/home/ubuntu/iTrust/{{ item }}'
+        owner: ubuntu
+        group: ubuntu
+        mode: 0777
+      with_items:
+        - package.json
+        - aws.js
+        - pom-data.xml
+        - fuzzer.py
+        - test_priortization.py
+
+    - name: Create empty inventory and dns.yml on Jenkins server for iTrust
+      copy:
+        content: ""
+        dest: '/home/ubuntu/iTrust/{{ item }}'
+        force: yes
+        owner: ubuntu
+        group: ubuntu
+        mode: 0777
+      with_items:
+        - inventory
+        - dns.yml
+        - priortization.dat     
+
+
+    - name: "Install Jenkins git and postbuild plugins"
+      jenkins_plugin: 
+        name: "{{ item }}"
+        params: "{{ jenkins_params }}"
+        url_password: "{{ admin_password }}"
+        validate_certs: no
+      with_items:
+        - git
+        - postbuild-task
+        - build-token-root
+        - credentials-binding
+        - envinject
+
+    - name: "Install jacoco with proper version"
+      jenkins_plugin: 
+        name: jacoco
+        params: "{{ jenkins_params }}"
+        url_password: "{{ admin_password }}"
+        version: "2.0.1"
+        validate_certs: no
+
+    - name: Restart jenkins
+      service: name=jenkins state=restarted
+
+    - name: "Wait For Jenkins To Come Up"
+      uri:
+        url: "http://{{ JenkinsDns }}:8081/cli/"
+        status_code: 403
+      register: result
+      until: result.status == 403
+      retries: 10
+      delay: 5
+
+
+    - name: jenkins job builder configuration
+      action: template src="./jenkins_jobs.ini" dest="/home/ubuntu/jenkins_jobs.ini" owner=root group=root mode=0600
+
+    - name: Copy iTrust build file to jenkins server
+      template:
+        src: iTrustBuild.yml
+        dest: /home/ubuntu/iTrust/iTrustBuild.yml
+      
+    - name: Create iTrust job using jjb
+      command: jenkins-jobs --conf /home/ubuntu/jenkins_jobs.ini update /home/ubuntu/iTrust/iTrustBuild.yml
+      environment:
+        git_username: "{{ git_username }}"
+        git_password: "{{ git_password }}"
+
+    # Checkbox Testing
+
+   
+    
+    - name: Verify that the repository exists
+      stat:
+        path: /home/ubuntu/Checkbox
+      register: repo_verify
+
+    - name: Clone repository when it doesn't work
+      git:
+        repo: https://github.com/goeltanmay/checkbox.io.git
+        dest: /home/ubuntu/Checkbox
+        clone: yes
+      when: repo_verify.stat.exists == False
+
+    - name: "Modify default file to change location of public html"
+      lineinfile:
+        path: /home/ubuntu/Checkbox/local-conf/default
+        regexp: '^(.*)root /Users/gameweld/bitbucket/checkbox.io/checkbox.io/public_html/;$'
+        line: 'root /home/ubuntu/Checkbox/public_html/;'
+
+    - name: "Modify nginx file to change IP"
+      lineinfile:
+        path: /home/ubuntu/Checkbox/local-conf/nginx.conf
+        regexp: '^(.*)server 127.0.0.1:3002;$'
+        line: 'server {{ JenkinsDns }}:3002;'
+ 
+    - name: Copy main.js and testgenerator.js onto the Jenkins server for Checkbox test
+      copy:
+        src: '{{ item }}'
+        dest: '/home/ubuntu/Checkbox/server-side/site/{{ item }}'
+        owner: ubuntu
+        group: ubuntu
+        mode: 0777
+      with_items:
+        - main.js
+        - testgenerator.js
+        - constraint.js
+        - format-polyfill.js
+        
+    - name: "Replace default template"
+      copy:
+        remote_src: True
+        src: /home/ubuntu/Checkbox/local-conf/default
+        dest: /etc/nginx/sites-available/default
+        owner: root
+        group: root
+        mode: 0600
+    
+    - name: "Replace nginx template"
+      copy:
+        remote_src: True
+        src: /home/ubuntu/Checkbox/local-conf/nginx.conf
+        dest: /etc/nginx/nginx.conf
+        owner: root
+        group: root
+        mode: 0600
+    
+    - name: "Start nginx"
+      service:
+        name: nginx
+        state: started
+
+    - name: Copy package.json for checkbox
+      copy:
+        src: checkbox_package
+        dest: '/home/ubuntu/Checkbox/server-side/site/package.json'
+        owner: ubuntu
+        group: ubuntu
+        mode: 0777
+
+    - name: Install packages based on package.json.
+      npm:
+        path: /home/ubuntu/Checkbox/server-side/site
+      state: present  
+   
+    - name: Mongo DB environment variables
+      include_vars: checkboxvar.yml
+
+    - name: "Import the mongo db public key from keyserver"
+      apt_key:
+        keyserver: keyserver.ubuntu.com
+        id: 2930ADAE8CAF5059EE73BB4B58712A2291FA4AD5
+    
+    - name: "Add the mongo db repository"
+      apt_repository:
+        repo: deb https://repo.mongodb.org/apt/ubuntu {{ansible_distribution_release}}/mongodb-org/3.6 multiverse
+        state: present
+        update_cache: yes
+
+    - name: "Install Mongo DB"
+      apt:
+       name: mongodb-org
+       state: present
+       update_cache: yes
+
+    - name: "Start mongodb"
+      service:
+        name: mongod
+        state: started 
+   
+    - name: "Create mongo DB user"
+      mongodb_user:
+        database: admin 
+        name: "{{ MONGO_USER }}"
+        password: "{{ MONGO_PASSWORD }}"
+        roles: 'root'
+        state: present   
+
+    - name: "Restart nginx"
+      service:
+        name: nginx
+        state: restarted
+   
+    - name: "Install forever.js with npm"
+      npm:
+        name: forever
+        global: yes
+        state: present
+
+    - name: "Start the server"
+      command: forever start server.js  
+      args:
+        chdir: /home/ubuntu/Checkbox/server-side/site
+      environment:
+        MONGO_USER: "{{ MONGO_USER }}"
+        MONGO_PASSWORD: "{{ MONGO_PASSWORD }}"
+        MONGO_IP: "{{ MONGO_IP }}"
+        MONGO_PORT: "{{ MONGO_PORT }}"  
+        MAIL_USER: "{{ MAIL_USER }}" 
+        MAIL_PASSWORD: "{{ MAIL_PASSWORD }}" 
+        MAIL_SMTP: "{{ MAIL_SMTP }}" 
+        
+    - name: "Generate test.js"
+      command: nodejs main.js  
+      args:
+        chdir: /home/ubuntu/Checkbox/server-side/site
+      environment:
+        MONGO_USER: "{{ MONGO_USER }}"
+        MONGO_PASSWORD: "{{ MONGO_PASSWORD }}"
+        MONGO_IP: "{{ MONGO_IP }}"
+        MONGO_PORT: "{{ MONGO_PORT }}"  
+        MAIL_USER: "{{ MAIL_USER }}" 
+        MAIL_PASSWORD: "{{ MAIL_PASSWORD }}" 
+        MAIL_SMTP: "{{ MAIL_SMTP }}" 
+            
+    - name: "Run the tests"
+      command: nodejs test.js  
+      args:
+        chdir: /home/ubuntu/Checkbox/server-side/site
+      environment:
+        MONGO_USER: "{{ MONGO_USER }}"
+        MONGO_PASSWORD: "{{ MONGO_PASSWORD }}"
+        MONGO_IP: "{{ MONGO_IP }}"
+        MONGO_PORT: "{{ MONGO_PORT }}"  
+        MAIL_USER: "{{ MAIL_USER }}" 
+        MAIL_PASSWORD: "{{ MAIL_PASSWORD }}" 
+        MAIL_SMTP: "{{ MAIL_SMTP }}" 
+        
+    # - name: Fetch the coverage report
+    #   synchronize:
+    #     src: /home/ubuntu/Checkbox/server-side/site/coverage
+    #     dest: ../
+    #     mode: pull
+    #     recursive: yes   
+
+    - name: Drop studies
+      shell: mongo site --eval "db.studies.drop()"  
+
+    - pause:
+        seconds: 10
+
+    - name: Install python-mysqldb
+      apt: name=python-mysqldb state=present
+      become: true
+    
+    - name: Install sql-server
+      apt: name=mysql-server state=present
+      become: true
+    
+    - name: To accept lower case table names in mysql
+      lineinfile:
+        path: /etc/mysql/my.cnf
+        regexp: "skip-external-locking"
+        insertafter: "skip-external-locking"
+        line: "lower_case_table_names=1"
+      become: true
+    
+    - name: restart mysql
+      shell: sudo service mysql restart
+    
+    - name: wait for my-sql to start
+      wait_for: port=3306
+      become: true
+      
+    - name: Run the python script
+      shell: python /home/ubuntu/iTrust/fuzzer.py
+      with_sequence: count=10
+      async: 2000000
+      poll: 5
+      ignore_errors: yes
+
+    - name: Run the python priortization script
+      shell: python /home/ubuntu/iTrust/test_priortization.py
+
+...
