@@ -39,14 +39,42 @@ After doing the test prioritization, we came to see some set of failures which a
 As disscussed above, the fuzzer helps to find out the missing test cases which can lead to successful build even though it shouldn't.
 The fuzzing helps to prioritize the test case. Extending fuzzing with AI can help improve the prioritization of the test cases more intelligently. For an example, it can help to choose better probability distribution for each type of fuzzing.
 
-There can be multiple reasons for test to be ranked higher. The time elapsed can affect the system. It is often observed that it is one of the major causes. As we build more and more, it required more memory which leads to swapping to disk and slows down the system. After a certain threshold of the system, the system is also not able to allocate any memory as all the meory is being used up. This lead us to change the instance with better memory (both primary and secondar memeory) and processor. Other reason can be the number of times the test case that fails. Suppose one test case fails every now and then and obviously will lead to ranked higher in test prioritiation analysis.
+There can be multiple reasons for test to be ranked higher. The time elapsed can affect the system. It is often observed that it is one of the major causes. As we build more and more, it required more memory which leads to swapping to disk and slows down the system. After a certain threshold of the system, the system is also not able to allocate any memory as all the memory is being used up. This lead us to change the instance with better memory (both primary and secondar memory) and processor. Other reason can be the number of times the test case that fails. Suppose one test case fails every now and then and obviously will lead to ranked higher in test prioritiation analysis.
 
 #### Approach for Automated Test Generation:
-First, we looked up at what all we can test and how we can test. After having a lot of difficulty in understanding, we started writing test cases manually in test.js and using istanbul to check coverage. While writing the manual test.js we realize that we can automate those using esprima. Using esprima online tool helped us o find out the AST patten, through which we generate a dictionary which contains all the useful information like function name, file name, the url to hit and type of request (GET/ POST). With the help of this dictionary and the experience of manual test.js we were able to generate the test automatically using testgenerator.js by generating data and calling the url automatically. But this we use istanbul-middleware to check the coverage on the server side.
+First, we looked up at what all we can test and how we can test. After having a lot of difficulty in understanding, we started writing test cases manually in test.js and using istanbul to check coverage. While writing the manual test.js we realize that we can automate those using esprima. Using esprima online tool helped us to find out about the AST pattern, through which we generated a dictionary which contains all the useful information like function name, file name, the url to hit and type of request (GET/ POST). With the help of this dictionary and the experience of manual test.js we were able to generate the test cases in test.js automatically using testgenerator.js by generating data and calling the url automatically. But this time, we used istanbul-middleware to check the coverage on the server side.
 
-After, the tiring session with Checkbox understanding and shouting on each other, we were finally able to reach aprroximately 50% coverage. :-) We were able to generate test cases for `create.js` and `admin.js`.
+After, the tiring session with Checkbox understanding and shouting on each other, we were finally able to reach aprroximately 50% coverage. :-) We were able to generate test cases for `create.js`,`studyModel.js` and `admin.js`.
  ### Screenshots:
 
- - __Coverage Summary__ 
+ - __Checkbox.io Overall Coverage Summary__ 
 
  ![alt text](../Milestone2/screenshots/checkbox/Overallcoverage.png "High Level Coverage Summary")
+
+ - __Checkbox.io Coverage Summary for Files__ 
+
+ ![alt text](../Milestone2/screenshots/checkbox/files.png "High Level Coverage Summary for Files")
+
+ - __Checkbox.io studyModel.js coverage__ 
+
+ ![alt text](../Milestone2/screenshots/checkbox/studyModel.png "Checkbox.io studyModel.js coverage")
+
+ - __Checkbox.io create.js coverage__ 
+
+ ![alt text](../Milestone2/screenshots/checkbox/create.png "Checkbox.io create.js coverage")
+
+ - __iTrust Jacoco coverage__ 
+
+ ![alt text](../Milestone2/screenshots/iTrust/jacoco.png "iTrust Jacoco coverage")
+
+ - __iTrust Jacoco coverage overview__ 
+
+ ![alt text](../Milestone2/screenshots/iTrust/jacoco_overview.png "iTrust Jacoco coverage overview")
+
+ - __iTrust Jacoco coverage detail__ 
+
+ ![alt text](../Milestone2/screenshots/iTrust/jacoco_detail.png "iTrust Jacoco coverage detail")
+
+ - __iTrust Test Prioritization Analysis__ 
+
+ ![alt text](../Milestone2/screenshots/iTrust/test_prioritization.png "iTrust Test Prioritization Analysis")
