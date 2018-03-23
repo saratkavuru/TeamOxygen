@@ -397,43 +397,43 @@
     #     mode: pull
     #     recursive: yes   
 
-    - name: Drop studies
-      shell: mongo site --eval "db.studies.drop()"  
+    # - name: Drop studies
+    #   shell: mongo site --eval "db.studies.drop()"  
 
-    - pause:
-        seconds: 10
+    # - pause:
+    #     seconds: 10
 
-    - name: Install python-mysqldb
-      apt: name=python-mysqldb state=present
-      become: true
+    # - name: Install python-mysqldb
+    #   apt: name=python-mysqldb state=present
+    #   become: true
     
-    - name: Install sql-server
-      apt: name=mysql-server state=present
-      become: true
+    # - name: Install sql-server
+    #   apt: name=mysql-server state=present
+    #   become: true
     
-    - name: To accept lower case table names in mysql
-      lineinfile:
-        path: /etc/mysql/my.cnf
-        regexp: "skip-external-locking"
-        insertafter: "skip-external-locking"
-        line: "lower_case_table_names=1"
-      become: true
+    # - name: To accept lower case table names in mysql
+    #   lineinfile:
+    #     path: /etc/mysql/my.cnf
+    #     regexp: "skip-external-locking"
+    #     insertafter: "skip-external-locking"
+    #     line: "lower_case_table_names=1"
+    #   become: true
     
-    - name: restart mysql
-      shell: sudo service mysql restart
+    # - name: restart mysql
+    #   shell: sudo service mysql restart
     
-    - name: wait for my-sql to start
-      wait_for: port=3306
-      become: true
+    # - name: wait for my-sql to start
+    #   wait_for: port=3306
+    #   become: true
       
-    - name: Run the python script
-      shell: python /home/ubuntu/iTrust/fuzzer.py
-      with_sequence: count=10
-      async: 2000000
-      poll: 5
-      ignore_errors: yes
+    # - name: Run the python script
+    #   shell: python /home/ubuntu/iTrust/fuzzer.py
+    #   with_sequence: count=10
+    #   async: 2000000
+    #   poll: 5
+    #   ignore_errors: yes
 
-    - name: Run the python priortization script
-      shell: python /home/ubuntu/iTrust/test_priortization.py
+    # - name: Run the python priortization script
+    #   shell: python /home/ubuntu/iTrust/test_priortization.py
 
 ...

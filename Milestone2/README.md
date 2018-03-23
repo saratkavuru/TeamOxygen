@@ -1,4 +1,4 @@
-# Milestone 2 - Test and Analysis Milestone
+# [Milestone 2 - Test and Analysis Milestone](https://github.com/CSC-DevOps/Course/blob/master/Project/BuildTestAnalysis.md)
 
 ## Contribution:
 
@@ -29,6 +29,6 @@
 - [main.js](../Milestone2/main.js) , [constraint.js](../Milestone2/constraint.js) and [format-polyfill.js](../Milestone2/format-polyfill.js) are files used in automated test generation for checkbox.io application.
 - [fuzzer.py](../Milestone2/fuzzer.py) and [test_prioritization.py](../Milestone2/test_prioritization.py) are the python scripts are used for automated commit generation using a commit fuzzer and test prioritazation of the tests respectively.
 - [iTrustBuild.yml](../Milestone2/iTrustBuild.yml) is the yml file which is parsed by the jenkins job builder to create an iTrust job on Jenkins server.
-- The ansible-playbook [milestone2.yml](../Milestone2/milestone.yml) is an outer level playbook which executes node.yml and BuildAndTestAnalysis.yml playbook and thus automating the entire Milestone 2 to a single step.
+- The ansible-playbook [milestone2.yml](../Milestone2/milestone2.yml) is an outer level playbook which executes node.yml and BuildAndTestAnalysis.yml playbook and thus automating the entire Milestone 2 to a single step.
 
  ### Experience:
