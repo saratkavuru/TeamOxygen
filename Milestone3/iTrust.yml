@@ -1,0 +1,118 @@
+---
+ - hosts: iTrust
+   tasks:  
+    - name: update apt
+      apt:
+        update_cache: yes
+      become: true
+    
+    - name: Add Java repository
+      apt_repository: repo='ppa:webupd8team/java' state=present update_cache=yes 
+      become: true
+    
+    - name: Add license for java
+      debconf: name='oracle-java8-installer' question='shared/accepted-oracle-license-v1-1' value=true vtype=select
+      become: true
+    
+    - name: Install java
+      apt: name=oracle-java8-installer state=present    
+      become: true
+
+    - name: Install java
+      apt: name=oracle-java8-set-default state=present    
+      become: true
+    
+    - name: Install ca-certificates
+      apt: name=ca-certificates state=present
+      become: true
+    
+    - name: Install git
+      apt: name=git state=present
+      become: true
+    
+    - name: Install maven
+      apt: name=maven state=present
+      become: true
+    
+    - name: Install python-mysqldb
+      apt: name=python-mysqldb state=present
+      become: true
+    
+    - name: create development dir
+      file: path="/home/ubuntu/development" state=directory 
+      become: true
+    
+    - name: downloading apache tomcat9
+      get_url:
+        url: http://www-eu.apache.org/dist/tomcat/tomcat-9/v9.0.5/bin/apache-tomcat-9.0.5.tar.gz
+        dest: "/home/ubuntu/apache-tomcat-9.0.0.M26.tar.gz"
+        force: no
+        mode: 755
+      become: true
+    
+    - name: unzip the apache9 files
+      unarchive:
+        src: "/home/ubuntu/apache-tomcat-9.0.0.M26.tar.gz"
+        dest: "/home/ubuntu/development"
+        remote_src: yes
+      become: true
+    
+    - name: Install sql-server
+      apt: name=mysql-server state=present
+      become: true
+    
+    - name: To accept lower case table names in mysql
+      lineinfile:
+        path: /etc/mysql/my.cnf
+        regexp: "skip-external-locking"
+        insertafter: "skip-external-locking"
+        line: "lower_case_table_names=1"
+      become: true
+
+    - name: restart mysql
+      shell: sudo service mysql restart
+    
+    - name: wait for my-sql to start
+      wait_for: port=3306
+      become: true
+    
+    - name: create itrust directory for the itrust app
+      file: path="/home/ubuntu/development/iTrust-v23" state=directory
+      become: true
+    
+    - name: clone the itrust repo from git
+      git: 
+        repo: "https://{{ git_username }}:{{ git_password }}@github.ncsu.edu/engr-csc326-staff/iTrust2-v2.git"
+        dest: "/home/ubuntu/development/iTrust-v2"
+        clone: yes
+        force: yes
+      become: true
+
+    - name: mysql password
+      shell: sudo mv /home/ubuntu/development/iTrust-v2/iTrust2/src/main/java/db.properties.template /home/ubuntu/development/iTrust-v2/iTrust2/src/main/java/db.properties
+
+    - name: hibernate
+      shell: sudo mv /home/ubuntu/development/iTrust-v2/iTrust2/src/main/resources/hibernate.properties.template /home/ubuntu/development/iTrust-v2/iTrust2/src/main/resources/hibernate.properties
+
+    - name: email copy
+      shell: sudo mv /home/ubuntu/development/iTrust-v2/iTrust2/src/main/java/email.properties.template /home/ubuntu/development/iTrust-v2/iTrust2/src/main/java/email.properties
+
+    - name: run mvn package
+      command: mvn process-test-classes
+      ignore_errors: True
+      failed_when: False
+      args:
+        chdir: "/home/ubuntu/development/iTrust-v2/iTrust2" 
+      become: true
+    
+    - name: run mvn jetty
+      shell: "nohup mvn jetty:run &"
+      ignore_errors: True
+      failed_when: False
+      args:
+        chdir: "/home/ubuntu/development/iTrust-v2/iTrust2" 
+      become: true
+    
+    - name: wait for tomcat to start
+      wait_for: port=8080
+      become: true
