@@ -24,7 +24,6 @@
               escalate-status: false
               run-if-job-successful: true
               script: |
-                pwd
                 git checkout master
                 git init --bare production
                 echo "#!/bin/sh" >> ./production/hooks/post-receive
