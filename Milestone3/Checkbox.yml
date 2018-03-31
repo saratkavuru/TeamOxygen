@@ -101,6 +101,10 @@
        name: mongod
        state: started    
 
+   - name: "Avoid UNTRUSTED ERROR"
+     shell:
+      npm config set strict-ssl false
+
    - name: "Run npm install"
      command: npm install
      args:
