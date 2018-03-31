@@ -130,28 +130,6 @@
 
     - name: Export AWSSecretKey as env variable
       shell: export AWSSecretKey="{{ AWSSecretKey }}" 
-
-    # - name: Add Maven repository 
-    #   apt_repository:
-    #     repo: 'ppa:andrei-pozolotin/maven3'
-    #     state: present
-    #     update_cache: yes    
-
-    # - name: Purge existing Maven configuration files
-    #   apt:
-    #     name: "{{ item }}"
-    #     purge: yes
-    #     update_cache: yes
-    #   with_items:
-    #     - maven
-    #     - maven2
-    #     - maven3
-   
-    # - name: Install maven3
-    #   apt:
-    #     name: maven3
-    #     state: latest
-    #     update_cache: yes
     
     - include_vars:
         file: dns.yml
