@@ -24,7 +24,7 @@
    - name: Install the dependencies for aws.js
      command: npm install
      args:
-       chdir: /home/vagrant/Project/Milestone1
+       chdir: /home/vagrant/Project/Milestone3
 
    - name: Delete inventory and dns.json file
      file: 
@@ -37,7 +37,7 @@
    -  name: Run aws.js for Jenkins
       command: node aws.js Jenkins
       args:
-        chdir:  /home/vagrant/Project/Milestone1
+        chdir:  /home/vagrant/Project/Milestone3
       environment:
         AWSAccessKeyId : "{{ AWSAccessKeyId }}"
         AWSSecretKey : "{{ AWSSecretKey }}"  
