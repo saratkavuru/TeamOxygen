@@ -1,6 +1,6 @@
 ---
 
-# ansible-playbook --ask-vault-pass node.yml -v
+# ansible-playbook --ask-vault-pass node.yml -vvv
 
 - hosts: localhost
   become: yes
