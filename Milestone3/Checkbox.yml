@@ -3,15 +3,6 @@
 
 - hosts: Checkbox
   become: yes
-  
-  # vars:
-#     MONGO_PORT
-# MONGO_IP
-# MONGO_USER
-# MONGO_PASSWORD
-# MAIL_USER
-# MAIL_PASSWORD
-# MAIL_SMTP
 
   tasks:
    - name: "Install git, nginx, nodejs, npm and python-pip"
@@ -22,9 +13,24 @@
      with_items:
        - git 
        - nginx
-       - nodejs-legacy
-       - npm 
        - python-pip
+
+   - name: Add nodesource apt key
+     shell: curl -s https://deb.nodesource.com/gpgkey/nodesource.gpg.key | apt-key add -
+
+   - name: Install the nodejs LTS repos
+     apt_repository:
+      repo: deb https://deb.nodesource.com/node_9.x {{ ansible_distribution_release }} main
+      state: present
+      update_cache: yes
+
+   - name: Install nodejs and npm
+     apt:
+      pkg: "{{ item }}"
+      state: present
+      update_cache: true
+     with_items:
+       - nodejs
 
    - name: "Include variables from cred"
      include_vars: "{{ item }}"
