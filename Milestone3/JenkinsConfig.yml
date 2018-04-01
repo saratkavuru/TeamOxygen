@@ -21,7 +21,7 @@
     - jenkins_package_state: present
     - jenkins_jar_location: /opt/jenkins-cli.jar
     - jenkins_url_username: admin
-    - jenkins_url: http://{{ JenkinsDns }}:8080
+    - jenkins_url: http://{{ JenkinsDns }}:8081
   
   tasks:
     - name: Install add-apt-repostory
@@ -88,6 +88,11 @@
       pip:
         name: 
           - jenkins-job-builder
+    
+    - name: copy jenkins file
+      copy:
+        src: jenkins
+        dest: /etc/default/jenkins
 
     - name: Restart jenkins when user changes.
       service: name=jenkins state=restarted
@@ -135,7 +140,7 @@
 
     - name: Get the jenkins-cli jarfile from the Jenkins server.
       get_url:
-        url: "http://{{ JenkinsDns }}:8080/jnlpJars/jenkins-cli.jar"
+        url: "http://{{ JenkinsDns }}:8081/jnlpJars/jenkins-cli.jar"
         dest: "{{ jenkins_jar_location }}"
       register: jarfile_get
       until: "'OK' in jarfile_get.msg or 'file already exists' in jarfile_get.msg"
@@ -264,7 +269,7 @@
 
     - name: "Wait For Jenkins To Come Up"
       uri:
-        url: "http://{{ JenkinsDns }}:8080/cli/"
+        url: "http://{{ JenkinsDns }}:8081/cli/"
         status_code: 403
       register: result
       until: result.status == 403
@@ -284,43 +289,44 @@
     - name: jenkins job builder configuration
       action: template src="./jenkins_jobs.ini" dest="/home/ubuntu/jenkins_jobs.ini" owner=root group=root mode=0600
   
-    - name: Create checkbox job using jjb
-      command: jenkins-jobs --conf /home/ubuntu/jenkins_jobs.ini update /home/ubuntu/CheckBoxBuild.yml
+    # - name: Create checkbox job using jjb
+    #   command: jenkins-jobs --conf /home/ubuntu/jenkins_jobs.ini update /home/ubuntu/CheckBoxBuild.yml
       
-    # - name: Create iTrust job using jjb
-    #   command: jenkins-jobs --conf /home/ubuntu/jenkins_jobs.ini update /home/ubuntu/iTrust/iTrustBuild.yml
-    #   environment:
-    #     git_username: "{{ git_username }}"
-    #     git_password: "{{ git_password }}"
+    - name: Create iTrust job using jjb
+      command: jenkins-jobs --conf /home/ubuntu/jenkins_jobs.ini update /home/ubuntu/iTrust/iTrustBuild.yml
+      environment:
+        git_username: "{{ git_username }}"
+        git_password: "{{ git_password }}"
 
-    - name: Run a checkbox build
-      shell: curl -v http://{{ JenkinsDns }}:8080/buildByToken/build?job=checkbox\&token=8fc61f12b36588bf13393a30a6af61e6
-    
-    # - name: Run a iTrust build
-    #   shell: curl -v http://{{ JenkinsDns }}:8080/buildByToken/build?job=iTrust\&token=8fc61f12b36588bf13393a30a6af61e6
-    
+    # - name: Run a checkbox build
+    #   shell: curl -v http://{{ JenkinsDns }}:8081/buildByToken/build?job=checkbox\&token=8fc61f12b36588bf13393a30a6af61e6
+
     # Rest are for iTrust in Jenkins
-    # - name: Install python-mysqldb
-    #   apt: name=python-mysqldb state=present
-    #   become: true
     
-    # - name: Install sql-server
-    #   apt: name=mysql-server state=present
-    #   become: true
+    - name: Install sql-server
+      apt: name=mysql-server state=present
+      become: true
     
-    # - name: To accept lower case table names in mysql
-    #   lineinfile:
-    #     path: /etc/mysql/my.cnf
-    #     regexp: "skip-external-locking"
-    #     insertafter: "skip-external-locking"
-    #     line: "lower_case_table_names=1"
-    #   become: true
+    - name: To accept lower case table names in mysql
+      lineinfile:
+        path: /etc/mysql/my.cnf
+        regexp: "skip-external-locking"
+        insertafter: "skip-external-locking"
+        line: "lower_case_table_names=1"
+      become: true
     
-    # - name: restart mysql
-    #   shell: sudo service mysql restart
+    - name: restart mysql
+      shell: sudo service mysql restart
     
-    # - name: wait for my-sql to start
-    #   wait_for: port=3306
-    #   become: true
+    - name: wait for my-sql to start
+      wait_for: port=3306
+      become: true
+
+    - name: Install python-mysqldb
+      apt: name=python-mysqldb state=present
+      become: true
+
+    - name: Run a iTrust build
+      shell: curl -v http://{{ JenkinsDns }}:8081/buildByToken/build?job=iTrust\&token=8fc61f12b36588bf13393a30a6af61e6
 
 ...

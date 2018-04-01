@@ -27,7 +27,6 @@
                 git checkout master
                 git init --bare production
                 echo "#!/bin/sh" >> ./production/hooks/post-receive
-                echo "echo heyy" >> ./production/hooks/post-receive
                 echo "GIT_WORK_TREE=/var/lib/jenkins/jobs/checkbox/workspace/production-www/ git checkout -f" >> ./production/hooks/post-receive
                 echo "export AWSAccessKeyId={{ AWSAccessKeyId }}" >> ./production/hooks/post-receive
                 echo "export AWSSecretKey={{ AWSSecretKey }}" >> ./production/hooks/post-receive
