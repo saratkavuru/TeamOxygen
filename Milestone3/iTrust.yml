@@ -61,10 +61,6 @@
       wait_for: port=3306
       become: true
     
-    # - name: create itrust directory for the itrust app
-    #   file: path="/home/ubuntu/development/iTrust-v23" state=directory
-    #   become: true
-    
     - name: clone the itrust repo from git
       git: 
         repo: "https://{{ git_username }}:{{ git_password }}@github.ncsu.edu/engr-csc326-staff/iTrust2-v1.git"
