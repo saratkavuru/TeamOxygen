@@ -1,0 +1,3 @@
+url jdbc:mysql://{{ JenkinsDns }}:3306/iTrust2?createDatabaseIfNotExist=true
+username root
+password 

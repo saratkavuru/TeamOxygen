@@ -19,7 +19,7 @@
             mv src/main/java/db.properties.template src/main/java/db.properties
             mv src/main/resources/hibernate.properties.template src/main/resources/hibernate.properties
             mv src/main/java/email.properties.template src/main/java/email.properties
-            mvn clean test verify checkstyle:checkstyle
+            # mvn clean test verify checkstyle:checkstyle
     publishers:
         - post-tasks:
             - matches:
@@ -32,12 +32,13 @@
                 git checkout master
                 git init --bare production
                 echo "#!/bin/sh" >> ./production/hooks/post-receive
-                echo "GIT_WORK_TREE=/var/lib/jenkins/jobs/iTrust/workspace/production-www/ git checkout -f" >> ./production/hooks/post-receive
+                echo "GIT_WORK_TREE=/var/lib/jenkins/jobs/iTrust/workspace/iTrust2-v1/production-www/ git checkout -f" >> ./production/hooks/post-receive
                 echo "export AWSAccessKeyId={{ AWSAccessKeyId }}" >> ./production/hooks/post-receive
                 echo "export AWSSecretKey={{ AWSSecretKey }}" >> ./production/hooks/post-receive
                 echo "cd /home/ubuntu/iTrust" >> ./production/hooks/post-receive
                 echo "echo '' > inventory" >> ./production/hooks/post-receive
                 echo "echo '' > dns.yml" >> ./production/hooks/post-receive
+                echo "nodejs aws.js iTrust" >> ./production/hooks/post-receive
                 echo "nodejs aws.js iTrust" >> ./production/hooks/post-receive
                 echo "sleep 45s" >> ./production/hooks/post-receive
                 echo "ansible-playbook iTrust.yml -i inventory -vvv" >> ./production/hooks/post-receive
