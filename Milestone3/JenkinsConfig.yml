@@ -88,6 +88,7 @@
       pip:
         name: 
           - jenkins-job-builder
+          - requests
     
     - name: copy jenkins file
       copy:
@@ -207,11 +208,20 @@
       with_items:
         - package.json
         - aws.js
+        - monitoring.py
 
     - name: Copy iTrust.yml as a template onto the Jenkins server for iTrust
       template:
         src: iTrust.yml
         dest: '/home/ubuntu/iTrust/iTrust.yml' 
+        owner: ubuntu
+        group: ubuntu
+        mode: 0777
+
+    - name: Copy rollingiTrust.yml as a template onto the Jenkins server for iTrust
+      template:
+        src: rollingiTrust.yml
+        dest: '/home/ubuntu/iTrust/rollingiTrust.yml' 
         owner: ubuntu
         group: ubuntu
         mode: 0777

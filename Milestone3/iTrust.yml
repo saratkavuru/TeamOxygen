@@ -17,10 +17,6 @@
     - name: Install java
       apt: name=oracle-java8-installer state=present    
       become: true
-
-    - name: Install java
-      apt: name=oracle-java8-set-default state=present    
-      become: true
     
     - name: Install ca-certificates
       apt: name=ca-certificates state=present

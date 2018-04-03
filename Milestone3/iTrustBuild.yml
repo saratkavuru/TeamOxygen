@@ -19,7 +19,7 @@
             mv src/main/java/db.properties.template src/main/java/db.properties
             mv src/main/resources/hibernate.properties.template src/main/resources/hibernate.properties
             mv src/main/java/email.properties.template src/main/java/email.properties
-            # mvn clean test verify checkstyle:checkstyle
+            mvn clean test verify checkstyle:checkstyle
     publishers:
         - post-tasks:
             - matches:
@@ -38,10 +38,12 @@
                 echo "cd /home/ubuntu/iTrust" >> ./production/hooks/post-receive
                 echo "echo '' > inventory" >> ./production/hooks/post-receive
                 echo "echo '' > dns.yml" >> ./production/hooks/post-receive
-                echo "nodejs aws.js iTrust" >> ./production/hooks/post-receive
-                echo "nodejs aws.js iTrust" >> ./production/hooks/post-receive
+                echo "nodejs aws.js iTrust 5" >> ./production/hooks/post-receive
                 echo "sleep 45s" >> ./production/hooks/post-receive
-                echo "ansible-playbook iTrust.yml -i inventory -vvv" >> ./production/hooks/post-receive
+                echo "python monitoring.py &" >> ./production/hooks/post-receive
+                echo "ansible-playbook iTrust.yml -i inventory" >> ./production/hooks/post-receive
+                echo "sleep 65s" >> ./production/hooks/post-receive
+                echo "ansible-playbook rollingiTrust.yml -i inventory" >> ./production/hooks/post-receive
                 cat ./production/hooks/post-receive
                 chmod 777 ./production/hooks/post-receive
                 mkdir production-www
