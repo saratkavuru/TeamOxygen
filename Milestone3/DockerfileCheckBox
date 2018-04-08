@@ -1,4 +1,4 @@
-# sudo docker build . -t some-content-nginx7
+# sudo docker build . -f DockerfileCheckBox -t some-content-nginx7
 # sudo docker tag some-content-nginx7 agoel5/some-content-nginx7
 # sudo docker push agoel5/some-content-nginx7
 # sudo docker run --name some-content-nginx7 -d some-content-nginx7 
