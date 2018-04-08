@@ -1,5 +1,6 @@
 # ansible-playbook --ask-vault-pass kubernetes.yml -vvv
-
+# export KOPS_CLUSTER_NAME=devtech.k8s.local
+# export KOPS_STATE_STORE=s3://kops-devtech
 ---
 - hosts: localhost
   become: yes
