@@ -1,5 +1,11 @@
 # sudo docker build . -f DockerfileMongoDB -t checkboxmongo
-
+# sudo docker run --name checkboxmongo -d checkboxmongo
+# sudo docker exec -it checkboxmongo /bin/bash
+# sudo docker tag checkboxmongo agoel5/checkboxmongo
+# sudo docker push agoel5/checkboxmongo
+# sudo docker stop $(sudo docker ps -aq)
+# sudo docker rm $(sudo docker ps -aq)
+# sudo docker rmi $(sudo docker images -q)
 FROM mongo
 
 # // Auth Configuration. Modify as needed. 

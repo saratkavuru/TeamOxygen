@@ -80,9 +80,7 @@
 
     - name: Create a Kubernetes cluster definition using kops      
       shell: |
-        # kops edit cluster ${KOPS_CLUSTER_NAME}
-        kops create cluster --node-count=2 --node-size=t2.micro --master-size=t2.micro --zones us-east-1a ${KOPS_CLUSTER_NAME}
-        # kops create cluster --node-count=2 --node-size=t2.micro --master-size=t2.micro --master-volume-size=10 --node-volume-size=5 --zones us-east-1a ${KOPS_CLUSTER_NAME}
+        kops create cluster --node-count=3 --node-size=t2.micro --master-size=t2.micro --zones us-east-1a ${KOPS_CLUSTER_NAME}
         kops update cluster ${KOPS_CLUSTER_NAME} --yes
       when: clusterExists.stderr_lines[1] is defined and clusterExists.stderr_lines[1]=='cluster \"devtech.k8s.local\" not found'
 
@@ -92,17 +90,27 @@
       register: result
       until: result.stdout.find("is ready") != -1
       retries: 150
-      delay: 10
+      delay: 30
       # when: clusterExists.stderr_lines[1] is defined and clusterExists.stderr_lines[1]=='cluster \"devtech.k8s.local\" not found'
 
     # Don't forget to copy deployment file in proper folder
     - name: Deploy Checkbox on K8s cluster
       shell: |
-        kubectl apply -f deployment.yml
-        kubectl expose deployment nginx-deployment --type=LoadBalancer --name=load-balancer
+        kubectl apply -f MongoDBDeploy.yml
       ignore_errors: yes        
 
-    - name: Delete the cluster
+    - pause:
+        minutes: 1
+
+    - name: Deploy Checkbox on K8s cluster
       shell: |
-        kops delete cluster ${KOPS_CLUSTER_NAME} --state=${KOPS_STATE_STORE} --yes
+        kubectl apply -f CheckboxDeploy.yml
+        kubectl apply -f https://raw.githubusercontent.com/kubernetes/dashboard/master/src/deploy/recommended/kubernetes-dashboard.yaml
+        kops get secrets kube --type secret -oplaintext
+        kubectl expose deployment nginx-deployment --type=LoadBalancer --name=load-balancer
+      ignore_errors: yes   
+
+    # - name: Delete the cluster
+    #   shell: |
+    #     kops delete cluster ${KOPS_CLUSTER_NAME} --state=${KOPS_STATE_STORE} --yes
 ...
