@@ -9,6 +9,6 @@
   "author": "Sarat Kavuru",
   "license": "ISC",
   "devDependencies": {
-    "aws-sdk":  ""
+    "aws-sdk": ""
   }
 }

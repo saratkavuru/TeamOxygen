@@ -8,7 +8,6 @@
 # ansible-playbook --ask-vault-pass JenkinsConfig.yml -i inventory -vvv
 
 - hosts: Jenkins
-  become: yes
   
   vars:
     - jenkins_repo_url: deb https://pkg.jenkins.io/debian binary/
@@ -24,14 +23,24 @@
     - jenkins_url: http://{{ JenkinsDns }}:8081
   
   tasks:
+
+    - name: remove systemd
+      apt:
+        name: systemd
+        state: absent
+      become: yes
+
     - name: Install add-apt-repostory
       apt: name=software-properties-common state=latest
+      become: yes
 
     - name: Add Oracle Java Repository
       apt_repository: repo='ppa:webupd8team/java'
+      become: yes
 
     - name: Accept Java 8 License
       debconf: name='oracle-java8-installer' question='shared/accepted-oracle-license-v1-1' value='true' vtype='select'
+      become: yes
 
     - name: install dependencies
       apt:
@@ -48,11 +57,13 @@
         - apt-transport-https
         - python-pip
         - maven
+      become: yes
 
     - name: Add Jenkins apt repository key.
       apt_key:
         url: "{{ jenkins_repo_key_url }}"
         state: present
+      become: yes
 
     - name: Add Jenkins apt repository.
       apt_repository:
@@ -60,6 +71,7 @@
         state: present
         update_cache: yes
       when: jenkins_repo_url != ''
+      become: yes
 
     - name: Download specific Jenkins version.
       get_url:
@@ -78,6 +90,7 @@
         deb: "/tmp/jenkins_{{ jenkins_version }}_all.deb"
         state: installed
       when: jenkins_version is defined and specific_version.stat.exists
+      become: yes
 
     - name: Ensure Jenkins is installed.
       apt:
@@ -89,23 +102,28 @@
         name: 
           - jenkins-job-builder
           - requests
+      become: yes
     
     - name: copy jenkins file
       copy:
         src: jenkins
         dest: /etc/default/jenkins
+      become: yes
 
     - name: Restart jenkins when user changes.
-      service: name=jenkins state=restarted
+      command: /etc/init.d/jenkins restart
+      become: yes
         
     - name: Add nodesource apt key
       shell: curl -s https://deb.nodesource.com/gpgkey/nodesource.gpg.key | apt-key add -
+      become: yes
 
     - name: Install the nodejs LTS repos
       apt_repository:
         repo: deb https://deb.nodesource.com/node_9.x {{ ansible_distribution_release }} main
         state: present
         update_cache: yes
+      become: yes        
 
     - name: Install nodejs and npm
       apt:
@@ -114,16 +132,19 @@
         update_cache: true
       with_items:
        - nodejs
+      become: yes
 
     - name: Add ansible repository
       apt_repository:
         repo: ppa:ansible/ansible
         update_cache: yes
+      become: yes
 
     - name: Install ansible
       apt:
         name: ansible   
         state: present 
+      become: yes        
 
     - name: Include vars from the vault
       include_vars:
@@ -148,10 +169,13 @@
       retries: 5
       delay: 10
       check_mode: no
+      become: yes
     
-    - action: command cat /var/lib/jenkins/secrets/initialAdminPassword
+    - name: get admin password of jenkins
+      action: command cat /var/lib/jenkins/secrets/initialAdminPassword
       register: out
       changed_when: "'z' in out.stdout"
+      become: yes
 
     - set_fact:
         admin_password: "{{ out.stdout_lines[0] }}"
@@ -160,14 +184,25 @@
       copy:
         src: ./config.xml
         dest: /var/lib/jenkins/config.xml
+      become: yes
+
+    - name: create checkbox folder at root
+      file: 
+        path: /checkbox 
+        state: directory
+        owner: jenkins
+        group: jenkins
+        mode: 0777
+      become: yes
 
     - name: copy DevOps.pem for checkbox
       copy:
         src: DevOps.pem
-        dest: /home/ubuntu/DevOps.pem
+        dest: /checkbox/DevOps.pem
         owner: jenkins
         group: jenkins
         mode: 0400
+      become: yes
 
     - name: create a directory for iTrust
       file:
@@ -175,7 +210,8 @@
         state: directory
         owner: jenkins
         group: jenkins
-        mode: 0755
+        mode: 0777
+      become: yes
 
     - name: copy DevOps.pem for iTrust
       copy:
@@ -183,20 +219,27 @@
         dest: /home/ubuntu/iTrust/DevOps.pem
         owner: jenkins
         group: jenkins
-        mode: 0400    
+        mode: 0400
+      become: yes
 
     - name: Copy important files onto the Jenkins server for Checkbox
       copy:
         src: '{{ item }}'
-        dest: '/home/ubuntu/{{ item }}'
+        dest: '/checkbox/{{ item }}'
         owner: ubuntu
-        group: ubuntu
+        group: ubuntu        
         mode: 0777
       with_items:
         - package.json
         - aws.js
         - Checkbox.yml
         - checkboxvar.yml
+        - kubernetes.yml
+        - MongoDBDeploy.yml
+        - CheckboxDeploy.yml
+        - dashboard-admin.yml
+        - RedisMasterDeploy.yml
+        - creds.yml
 
     - name: Copy important files onto the Jenkins server for iTrust
       copy:
@@ -245,7 +288,7 @@
     - name: Create empty inventory and dns.yml on Jenkins server for checkbox
       copy:
         content: ""
-        dest: '/home/ubuntu/{{ item }}'
+        dest: '/checkbox/{{ item }}'
         force: yes
         owner: ubuntu
         group: ubuntu
@@ -265,6 +308,17 @@
       with_items:
         - inventory
         - dns.yml     
+
+    - name: Create vault password file
+      copy:
+        content: "{{ vault_password }}"
+        dest: '/checkbox/{{ item }}'
+        force: yes
+        owner: ubuntu
+        group: ubuntu        
+        mode: 0444
+      with_items:
+        - vault_password_file.txt
 
     - name: Install dependencies for aws.js for checkbox
       shell: npm install
@@ -290,8 +344,21 @@
         - credentials-binding
         - envinject
 
+    - name: adding jenkins user to admin group
+      shell: |
+        usermod -aG sudo jenkins
+      become: yes
+
+    - name: copy sudoers
+      copy:
+        src: sudoers
+        dest: '/etc/sudoers'
+        force: yes
+      become: yes
+
     - name: Restart jenkins when user changes.
-      service: name=jenkins state=restarted
+      command: /etc/init.d/jenkins restart
+      become: yes
 
     - name: "Wait For Jenkins To Come Up"
       uri:
@@ -314,40 +381,48 @@
 
     - name: jenkins job builder configuration
       action: template src="./jenkins_jobs.ini" dest="/home/ubuntu/jenkins_jobs.ini" owner=root group=root mode=0600
+      become: yes
   
-    # - name: Create checkbox job using jjb
-    #   command: jenkins-jobs --conf /home/ubuntu/jenkins_jobs.ini update /home/ubuntu/CheckBoxBuild.yml
+    - name: Create checkbox job using jjb
+      command: jenkins-jobs --conf /home/ubuntu/jenkins_jobs.ini update /home/ubuntu/CheckBoxBuild.yml
+      become: yes
       
     - name: Create iTrust job using jjb
       command: jenkins-jobs --conf /home/ubuntu/jenkins_jobs.ini update /home/ubuntu/iTrust/iTrustBuild.yml
       environment:
         git_username: "{{ git_username }}"
         git_password: "{{ git_password }}"
+      become: yes
 
-    # - name: Run a checkbox build
-    #   shell: curl -v http://{{ JenkinsDns }}:8081/buildByToken/build?job=checkbox\&token=8fc61f12b36588bf13393a30a6af61e6
+    - name: Run a checkbox build
+      shell: curl -v http://{{ JenkinsDns }}:8081/buildByToken/build?job=checkbox\&token=8fc61f12b36588bf13393a30a6af61e6
 
     # Rest are for iTrust in Jenkins
     
     - name: Install sql-server
       apt: name=mysql-server state=present
-      become: true
+      become: yes
 
     - name: mysql config file
       copy:
         src: my.cnf
         dest: /etc/mysql/my.cnf
+      become: yes
 
     - name: restart mysql
       shell: sudo service mysql restart
+      become: yes
     
     - name: wait for my-sql to start
       wait_for: port=3306
-      become: true
-
+      become: yes
+    
+    - pause:
+        minutes: 1
+    
     - name: Install python-mysqldb
       apt: name=python-mysqldb state=present
-      become: true
+      become: yes
 
     - name: Grant user access to mysql
       shell: mysql -u root -e 'GRANT ALL ON *.* TO root;'

@@ -19,6 +19,7 @@
         - git
         - python-pip
         - curl
+        - snapd
 
     - name: install pip dependencies
       pip:
@@ -40,7 +41,7 @@
           chmod +x kops-linux-amd64
           sudo mv kops-linux-amd64 /usr/local/bin/kops
       args:
-        chdir: "{{ ansible_env.HOME }}"
+        chdir: /home/ubuntu/ # "{{ ansible_env.HOME }}"
       when: repo_verify.stat.exists == False  
 
     - name: Include vars from the vault
@@ -65,25 +66,29 @@
 
     - name: "Verify that the repository exists"
       stat:
-        path: /root/.ssh/id_rsa.pub
+        path: /home/ubuntu/.ssh/id_rsa.pub
       register: repo_verify
     
     - name: Gnerate key
       shell: |
-        ssh-keygen -N '' -f /home/vagrant/.ssh/id_rsa
+        ssh-keygen -N '' -f /home/ubuntu/.ssh/id_rsa
       when: repo_verify.stat.exists == False
 
     - name: Check if Kubernetes cluster exists or not
       shell: |
-        kops describe secrets --name=${KOPS_CLUSTER_NAME}
+        kops describe secrets --name=devtech.k8s.local
       register: clusterExists
       ignore_errors: yes
 
     - name: Create a Kubernetes cluster definition using kops      
       shell: |
-        kops create cluster --node-count=3 --node-size=t2.micro --master-size=t2.micro --zones us-east-1a ${KOPS_CLUSTER_NAME}
-        kops update cluster ${KOPS_CLUSTER_NAME} --yes
-      when: clusterExists.stderr_lines[1] is defined and clusterExists.stderr_lines[1]=='cluster \"devtech.k8s.local\" not found'
+        kops create cluster --name=devtech.k8s.local --node-count=3 --node-size=t2.micro --master-size=t2.micro --zones=us-east-1a --ssh-public-key=/home/ubuntu/.ssh/id_rsa.pub
+      when: clusterExists.stderr_lines[1] is defined and clusterExists.stderr_lines[1].find('\"devtech.k8s.local\" not found') != -1
+
+    - name: Create a Kubernetes cluster actually using kops      
+      shell: |
+        kops update cluster --name=devtech.k8s.local --yes
+      when: clusterExists.stderr_lines[1] is defined and clusterExists.stderr_lines[1].find('\"devtech.k8s.local\" not found') != -1
 
     - name: Validate the cluster
       shell: |
@@ -106,12 +111,14 @@
     - name: Deploy Checkbox on K8s cluster
       shell: |
         kubectl apply -f CheckboxDeploy.yml
+         kubectl apply -f RedisMasterDeploy.yml
         kubectl apply -f https://raw.githubusercontent.com/kubernetes/dashboard/master/src/deploy/recommended/kubernetes-dashboard.yaml
+        kubectl apply -f dashboard-admin.yml
         kops get secrets kube --type secret -oplaintext
         kubectl expose deployment nginx-deployment --type=LoadBalancer --name=load-balancer
       ignore_errors: yes   
 
     # - name: Delete the cluster
     #   shell: |
-    #     kops delete cluster ${KOPS_CLUSTER_NAME} --state=${KOPS_STATE_STORE} --yes
+    #     kops delete cluster --name=devtech.k8s.local --state=s3://kops-devtech --yes
 ...

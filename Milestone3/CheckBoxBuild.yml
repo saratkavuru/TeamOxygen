@@ -30,13 +30,10 @@
                 echo "GIT_WORK_TREE=/var/lib/jenkins/jobs/checkbox/workspace/production-www/ git checkout -f" >> ./production/hooks/post-receive
                 echo "export AWSAccessKeyId={{ AWSAccessKeyId }}" >> ./production/hooks/post-receive
                 echo "export AWSSecretKey={{ AWSSecretKey }}" >> ./production/hooks/post-receive
-                echo "cd /home/ubuntu" >> ./production/hooks/post-receive
+                echo "cd /checkbox" >> ./production/hooks/post-receive
                 echo "echo '' > inventory" >> ./production/hooks/post-receive
                 echo "echo '' > dns.yml" >> ./production/hooks/post-receive
-                echo "nodejs aws.js Checkbox" >> ./production/hooks/post-receive
-                echo "sleep 45s" >> ./production/hooks/post-receive
-                echo "ansible-playbook Checkbox.yml -i inventory -vvv" >> ./production/hooks/post-receive
-                cat ./production/hooks/post-receive
+                echo "ansible-playbook kubernetes.yml -i inventory -vvv --vault-password-file /checkbox/vault_password_file.txt" >> ./production/hooks/post-receive
                 chmod 777 ./production/hooks/post-receive
                 mkdir production-www
                 git remote add production file:///var/lib/jenkins/jobs/checkbox/workspace/production
