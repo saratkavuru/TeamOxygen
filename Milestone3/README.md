@@ -3,7 +3,7 @@
 ## Contribution:
 
 - Anshuman Goel (agoel5) : Kubernetes and Rolling updates
-- Divya Guttikonda (dguttik) : Canary 
+- Divya Guttikonda (dguttik) : Canary Release
 - Sarat Kavuru (skavuru) : Git hooks and deployment on AWS
 - Tanmay Goel (tgoel) : Kubernetes and Redis
 
