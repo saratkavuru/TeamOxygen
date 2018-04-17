@@ -30,9 +30,9 @@
 - [DockerfileCheckBox](../Milestone3/DockerfileCheckBox) , [DockerfileCheckBoxCanary](../Milestone3/DockerfileCheckBoxCanary), [DockerfileRedisMaster](../Milestone3/DockerfileRedisMaster) and [DockerfileMongoDB](../Milestone3/DockerfileMongoDB) are files used in configuring the kubernetes cluster and implementing a canary release for checkbox.io application.
 - [iTrust.yml](../Milestone3/iTrust.yml) and [CheckBox.yml](../Milestone3/CheckBox.yml) are the ansible playbooks that can deploy the respective applications on a remote server.
 - [iTrustBuild.yml](../Milestone3/iTrustBuild.yml) and [CheckBoxBuild.yml](../Milestone3/CheckBoxBuild.yml) are the yml files which are parsed by the jenkins job builder to create jobs for iTrust and Checkbox on Jenkins server. In the post-build, they execute a script that installs a git hook on the Jenkins server which triggers deployment on a git push to production.
-- [Kubernetes.yml](../Milestone3/kubernetes.yml) 
-- [rollingiTrust.yml](../Milestone3/rollingiTrust.yml) 
-- [monitoring.py](../Milestone3/monitoring.py) 
+- [Kubernetes.yml](../Milestone3/kubernetes.yml) is an ansible playbook that sets up and configures the kubernetes cluster for Checkbox.
+- [rollingiTrust.yml](../Milestone3/rollingiTrust.yml) is the file used to ensure that only one instance of mysql server is required for all of the iTrust servers.
+- [monitoring.py](../Milestone3/monitoring.py) is a python script which gathers and prints out the status of the iTrust servers.
 - The ansible-playbook [milestone3.yml](../Milestone3/milestone3.yml) is an outer level playbook which executes node.yml and JenkinsConfig.yml playbook and thus automating the entire Milestone 3 to a single step.
 
 ### Deployment
