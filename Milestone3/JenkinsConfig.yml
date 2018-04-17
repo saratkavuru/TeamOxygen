@@ -418,7 +418,7 @@
       become: yes
     
     - pause:
-        minutes: 1
+        minutes: 2
     
     - name: Install python-mysqldb
       apt: name=python-mysqldb state=present
