@@ -16,3 +16,8 @@
 - [Description](https://github.com/CSC-DevOps/Course/blob/master/Project/BuildTestAnalysis.md)
 - [Submission](https://github.ncsu.edu/skavuru/DevTech/tree/milestone2/Milestone2)
 - [Report](https://github.ncsu.edu/skavuru/DevTech/blob/milestone2/Milestone2/README.md)
+
+### Milestone 3
+- [Description](https://github.com/CSC-DevOps/Course/blob/master/Project/M3.md)
+- [Submission](https://github.ncsu.edu/skavuru/DevTech/tree/milestone3/Milestone3)
+- [Report](https://github.ncsu.edu/skavuru/DevTech/blob/milestone3/Milestone3/README.md)
