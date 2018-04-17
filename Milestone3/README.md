@@ -54,3 +54,7 @@ To show the Canary release the original `Checkbox` is used without any modificat
 ### Rolling Update
 
 After all the 5 instances are up and rulling, `rollingiTrust.yml` handles the Rolling update. It firstly kills the process on one instance and re-deploy it. And do it one by one for all the instances. The `monitoring.py` has the heartbeat mechanism which shows the availability of all 5 instances. In output one can easily see the rolling update.
+
+ - __Heartbeat status monitor for iTrust__ 
+
+ ![alt text](../Milestone3/Heartbeat.png "Heartbeat Status Monitor for iTrust Rolling Update")
