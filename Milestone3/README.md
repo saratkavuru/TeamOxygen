@@ -14,7 +14,7 @@
 
 ### Few Notes:
 
-- The ansible-vault file should be named __credys.yml__ and the following credentials should be stored in as key:value pairs (DOTOKEN : 'xxx').
+- The ansible-vault file should be named __creds.yml__ and the following credentials should be stored in as key:value pairs (DOTOKEN : 'xxx').
   - AWSAccessKeyId
   - AWSSecretKey
   - git_username
@@ -49,7 +49,7 @@ Apart from creating deployment, their corresponding services are also created. A
 
 ### Canary Release
 
-To show the Canary release the original `Checkbox` is used without any modification. The Dockefile for the same is `DockerfileCheckBoxCanary`. The Canary part is handled in Kubernetes using `CheckboxDeploy.yml`. Since, a load-balancer, is used which by default uses round-robin fashion for serving requests. 25% of the traffic is divereted to the Canary one.
+To show the Canary release the original `Checkbox` is used without any modification. The Dockefile for the same is `DockerfileCheckBoxCanary`. The Canary part is handled in Kubernetes using `CheckboxDeploy.yml`. Since, a load-balancer, is used which by default uses round-robin algorithm for serving requests. 25% of the traffic is divereted to the Canary one.
 
 ### Rolling Update
 
