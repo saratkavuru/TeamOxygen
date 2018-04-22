@@ -1,0 +1,156 @@
+---
+# ansible-playbook Checkbox.yml -i inventory -vvv
+
+- hosts: Checkbox
+  become: yes
+
+  tasks:
+   - name: "Install git, nginx, nodejs, npm and python-pip"
+     apt:
+       name: "{{ item }}"
+       state: installed
+       update_cache: yes
+     with_items:
+       - git 
+       - nginx
+       - python-pip
+
+   - name: Add nodesource apt key
+     shell: curl -s https://deb.nodesource.com/gpgkey/nodesource.gpg.key | apt-key add -
+
+   - name: Install the nodejs LTS repos
+     apt_repository:
+      repo: deb https://deb.nodesource.com/node_9.x {{ ansible_distribution_release }} main
+      state: present
+      update_cache: yes
+
+   - name: Install nodejs and npm
+     apt:
+      pkg: "{{ item }}"
+      state: present
+      update_cache: true
+     with_items:
+       - nodejs
+
+   - name: "Include variables from cred"
+     include_vars: "{{ item }}"
+     with_items:
+       - checkboxvar.yml
+       - dns.yml
+
+   - name: "Verify that the repository exists"
+     stat:
+       path: /home/vagrant/Checkbox
+     register: repo_verify
+   
+   - name: "Clone repository if it doesn't exist"
+     git: 
+       repo: https://github.com/chrisparnin/checkbox.io.git
+       dest: /home/vagrant/Checkbox
+       clone: yes
+     when: repo_verify.stat.exists == False
+   
+   - name: "Modify default file to change location of public html"
+     lineinfile:
+       path: /home/vagrant/Checkbox/local-conf/default
+       regexp: '^(.*)root /Users/gameweld/bitbucket/checkbox.io/checkbox.io/public_html/;$'
+       line: 'root /home/vagrant/Checkbox/public_html/;'
+
+   - name: "Modify nginx file to change IP"
+     lineinfile:
+       path: /home/vagrant/Checkbox/local-conf/nginx.conf
+       regexp: '^(.*)server 127.0.0.1:3002;$'
+       line: 'server {{ CheckboxDns }}:3002;'
+
+   - name: "Import the mongo db public key from keyserver"
+     apt_key:
+       keyserver: keyserver.ubuntu.com
+       id: 2930ADAE8CAF5059EE73BB4B58712A2291FA4AD5
+    
+   - name: "Add the mongo db repository"
+     apt_repository:
+       repo: deb https://repo.mongodb.org/apt/ubuntu {{ansible_distribution_release}}/mongodb-org/3.6 multiverse
+       state: present
+       update_cache: yes
+
+   - name: "Install Mongo DB"
+     apt:
+       name: mongodb-org
+       state: present
+       update_cache: yes
+   
+   - name: "Replace default template"
+     copy:
+       remote_src: True
+       src: /home/vagrant/Checkbox/local-conf/default
+       dest: /etc/nginx/sites-available/default
+       owner: root
+       group: root
+       mode: 0600
+    
+   - name: "Replace nginx template"
+     copy:
+       remote_src: True
+       src: /home/vagrant/Checkbox/local-conf/nginx.conf
+       dest: /etc/nginx/nginx.conf
+       owner: root
+       group: root
+       mode: 0600
+    
+   - name: "Start nginx"
+     service:
+       name: nginx
+       state: started
+
+   - name: "Start mongodb"
+     service:
+       name: mongod
+       state: started    
+
+   - name: "Avoid UNTRUSTED ERROR"
+     shell:
+      npm config set strict-ssl false
+
+   - name: "Run npm install"
+     command: npm install
+     args:
+       chdir: /home/vagrant/Checkbox/server-side/site
+   
+   - name: "Install pymongo using pip"
+     pip: 
+       name: pymongo
+       state: present
+    
+   - name: "Create mongo DB user"
+     mongodb_user:
+       database: admin 
+       name: "{{ MONGO_USER }}"
+       password: "{{ MONGO_PASSWORD }}"
+       roles: 'root'
+       state: present
+     
+   - name: "Restart nginx"
+     service:
+       name: nginx
+       state: restarted
+   
+   - name: "Install forever.js with npm"
+     npm:
+       name: forever
+       global: yes
+       state: present
+
+   - name: "Start the server"
+     command: forever start server.js  
+     args:
+       chdir: /home/vagrant/Checkbox/server-side/site
+     environment:
+       MONGO_USER: "{{ MONGO_USER }}"
+       MONGO_PASSWORD: "{{ MONGO_PASSWORD }}"
+       MONGO_IP: "{{ CheckboxDns }}"
+       MONGO_PORT: "{{ MONGO_PORT }}"  
+       MAIL_USER: "{{ MAIL_USER }}" 
+       MAIL_PASSWORD: "{{ MAIL_PASSWORD }}" 
+       MAIL_SMTP: "{{ MAIL_SMTP }}" 
+
+...  

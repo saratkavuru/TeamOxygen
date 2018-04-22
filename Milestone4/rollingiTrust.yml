@@ -1,0 +1,58 @@
+# ansible-playbook rollingiTrust.yml -i inventory -vvv
+---
+
+  - hosts: iTrust
+    serial: 1
+    tasks:
+      - name: kill the maven process
+        shell: kill -9 $(ps -ef | grep 'maven' | grep -v grep | awk '{print $2}')
+        become: true
+
+      - name: remove iTrust repo
+        shell: rm -rfd /home/ubuntu/development/iTrust-v1
+        become: true
+
+      - pause: seconds=30
+
+      - name: clone the itrust repo from git
+        git: 
+          repo: "https://{{ git_username }}:{{ git_password }}@github.ncsu.edu/engr-csc326-staff/iTrust2-v1.git"
+          dest: "/home/ubuntu/development/iTrust-v1"
+          clone: yes
+          force: yes
+        become: true
+
+      - name: mysql password
+        copy:
+          src: /home/ubuntu/iTrust/db.properties.template
+          dest: /home/ubuntu/development/iTrust-v1/iTrust2/src/main/java/db.properties
+        become: true
+
+      - name: hibernate
+        copy:
+          src: /home/ubuntu/iTrust/hibernate.properties.template
+          dest: /home/ubuntu/development/iTrust-v1/iTrust2/src/main/resources/hibernate.properties
+        become: true
+
+      - name: email copy
+        shell: sudo mv /home/ubuntu/development/iTrust-v1/iTrust2/src/main/java/email.properties.template /home/ubuntu/development/iTrust-v1/iTrust2/src/main/java/email.properties
+
+      - name: run mvn package
+        command: mvn process-test-classes
+        ignore_errors: True
+        failed_when: False
+        args:
+          chdir: "/home/ubuntu/development/iTrust-v1/iTrust2" 
+        become: true
+      
+      - name: run mvn jetty
+        shell: "nohup mvn jetty:run &"
+        ignore_errors: True
+        failed_when: False
+        args:
+          chdir: "/home/ubuntu/development/iTrust-v1/iTrust2" 
+        become: true
+
+      - pause: seconds=30        
+
+...            
