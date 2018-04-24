@@ -99,9 +99,14 @@
 
     - name: install pip dependencies
       pip:
-        name: 
+        name:
           - jenkins-job-builder
           - requests
+      become: yes
+
+    - name: upgrade requests
+      shell: |
+        sudo pip install --upgrade requests
       become: yes
     
     - name: copy jenkins file
@@ -399,35 +404,35 @@
 
     # Rest are for iTrust in Jenkins
     
-    - name: Install sql-server
-      apt: name=mysql-server state=present
-      become: yes
+    # - name: Install sql-server
+    #   apt: name=mysql-server state=present
+    #   become: yes
 
-    - name: mysql config file
-      copy:
-        src: my.cnf
-        dest: /etc/mysql/my.cnf
-      become: yes
+    # - name: mysql config file
+    #   copy:
+    #     src: my.cnf
+    #     dest: /etc/mysql/my.cnf
+    #   become: yes
 
-    - name: restart mysql
-      shell: sudo service mysql restart
-      become: yes
+    # - name: restart mysql
+    #   shell: sudo service mysql restart
+    #   become: yes
     
-    - name: wait for my-sql to start
-      wait_for: port=3306
-      become: yes
+    # - name: wait for my-sql to start
+    #   wait_for: port=3306
+    #   become: yes
     
-    - pause:
-        minutes: 2
+    # - pause:
+    #     minutes: 2
     
-    - name: Install python-mysqldb
-      apt: name=python-mysqldb state=present
-      become: yes
+    # - name: Install python-mysqldb
+    #   apt: name=python-mysqldb state=present
+    #   become: yes
 
-    - name: Grant user access to mysql
-      shell: mysql -u root -e 'GRANT ALL ON *.* TO root;'
+    # - name: Grant user access to mysql
+    #   shell: mysql -u root -e 'GRANT ALL ON *.* TO root;'
 
-    - name: Run a iTrust build
-      shell: curl -v http://{{ JenkinsDns }}:8081/buildByToken/build?job=iTrust\&token=8fc61f12b36588bf13393a30a6af61e6
+    # - name: Run a iTrust build
+    #   shell: curl -v http://{{ JenkinsDns }}:8081/buildByToken/build?job=iTrust\&token=8fc61f12b36588bf13393a30a6af61e6
 
 ...

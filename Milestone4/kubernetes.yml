@@ -82,7 +82,7 @@
 
     - name: Create a Kubernetes cluster definition using kops      
       shell: |
-        kops create cluster --name=devtech.k8s.local --node-count=3 --node-size=t2.micro --master-size=t2.micro --zones=us-east-1a --ssh-public-key=/home/ubuntu/.ssh/id_rsa.pub
+        kops create cluster --name=devtech.k8s.local --node-count=3 --node-size=t2.micro --master-size=t2.micro --zones=us-east-1a,us-east-1b --master-count=3 --ssh-public-key=/home/ubuntu/.ssh/id_rsa.pub
       when: clusterExists.stderr_lines[1] is defined and clusterExists.stderr_lines[1].find('\"devtech.k8s.local\" not found') != -1
 
     - name: Create a Kubernetes cluster actually using kops      
