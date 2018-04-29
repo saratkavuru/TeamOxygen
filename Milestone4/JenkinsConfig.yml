@@ -209,24 +209,6 @@
         mode: 0400
       become: yes
 
-    - name: create a directory for iTrust
-      file:
-        path: /home/ubuntu/iTrust
-        state: directory
-        owner: jenkins
-        group: jenkins
-        mode: 0777
-      become: yes
-
-    - name: copy DevOps.pem for iTrust
-      copy:
-        src: DevOps.pem
-        dest: /home/ubuntu/iTrust/DevOps.pem
-        owner: jenkins
-        group: jenkins
-        mode: 0400
-      become: yes
-
     - name: Copy important files onto the Jenkins server for Checkbox
       copy:
         src: '{{ item }}'
@@ -244,51 +226,7 @@
         - CheckboxDeploy.yml
         - dashboard-admin.yml
         - RedisMasterDeploy.yml
-        - creds.yml
-
-    - name: Copy important files onto the Jenkins server for iTrust
-      copy:
-        src: '{{ item }}'
-        dest: '/home/ubuntu/iTrust/{{ item }}'
-        owner: ubuntu
-        group: ubuntu
-        mode: 0777
-      with_items:
-        - package.json
-        - aws.js
-        - monitoring.py
-
-    - name: Copy iTrust.yml as a template onto the Jenkins server for iTrust
-      template:
-        src: iTrust.yml
-        dest: '/home/ubuntu/iTrust/iTrust.yml' 
-        owner: ubuntu
-        group: ubuntu
-        mode: 0777
-
-    - name: Copy rollingiTrust.yml as a template onto the Jenkins server for iTrust
-      template:
-        src: rollingiTrust.yml
-        dest: '/home/ubuntu/iTrust/rollingiTrust.yml' 
-        owner: ubuntu
-        group: ubuntu
-        mode: 0777
-
-    - name: Copy db.properties.template as a template onto the Jenkins server for iTrust
-      template:
-        src: db.properties.template
-        dest: '/home/ubuntu/iTrust/db.properties.template' 
-        owner: ubuntu
-        group: ubuntu
-        mode: 0777
-
-    - name: Copy hibernate.properties.template as a template onto the Jenkins server for iTrust
-      template:
-        src: hibernate.properties.template
-        dest: '/home/ubuntu/iTrust/hibernate.properties.template' 
-        owner: ubuntu
-        group: ubuntu
-        mode: 0777        
+        - creds.yml     
 
     - name: Create empty inventory and dns.yml on Jenkins server for checkbox
       copy:
@@ -300,19 +238,7 @@
         mode: 0777
       with_items:
         - inventory
-        - dns.yml
-
-    - name: Create empty inventory and dns.yml on Jenkins server for iTrust
-      copy:
-        content: ""
-        dest: '/home/ubuntu/iTrust/{{ item }}'
-        force: yes
-        owner: ubuntu
-        group: ubuntu
-        mode: 0777
-      with_items:
-        - inventory
-        - dns.yml     
+        - dns.yml    
 
     - name: Create vault password file
       copy:
@@ -328,12 +254,7 @@
     - name: Install dependencies for aws.js for checkbox
       shell: npm install
       args:
-        chdir: /home/ubuntu
-
-    - name: Install dependencies for aws.js for iTrust
-      shell: npm install
-      args:
-        chdir: /home/ubuntu/iTrust    
+        chdir: /home/ubuntu   
 
     - name: "Install Jenkins git and postbuild plugins"
       jenkins_plugin: 
@@ -378,11 +299,6 @@
       template:
         src: CheckBoxBuild.yml
         dest: /home/ubuntu/CheckBoxBuild.yml
-    
-    - name: Copy iTrust build file to jenkins server
-      template:
-        src: iTrustBuild.yml
-        dest: /home/ubuntu/iTrust/iTrustBuild.yml
 
     - name: jenkins job builder configuration
       action: template src="./jenkins_jobs.ini" dest="/home/ubuntu/jenkins_jobs.ini" owner=root group=root mode=0600
@@ -391,48 +307,8 @@
     - name: Create checkbox job using jjb
       command: jenkins-jobs --conf /home/ubuntu/jenkins_jobs.ini update /home/ubuntu/CheckBoxBuild.yml
       become: yes
-      
-    - name: Create iTrust job using jjb
-      command: jenkins-jobs --conf /home/ubuntu/jenkins_jobs.ini update /home/ubuntu/iTrust/iTrustBuild.yml
-      environment:
-        git_username: "{{ git_username }}"
-        git_password: "{{ git_password }}"
-      become: yes
 
     - name: Run a checkbox build
       shell: curl -v http://{{ JenkinsDns }}:8081/buildByToken/build?job=checkbox\&token=8fc61f12b36588bf13393a30a6af61e6
-
-    # Rest are for iTrust in Jenkins
-    
-    # - name: Install sql-server
-    #   apt: name=mysql-server state=present
-    #   become: yes
-
-    # - name: mysql config file
-    #   copy:
-    #     src: my.cnf
-    #     dest: /etc/mysql/my.cnf
-    #   become: yes
-
-    # - name: restart mysql
-    #   shell: sudo service mysql restart
-    #   become: yes
-    
-    # - name: wait for my-sql to start
-    #   wait_for: port=3306
-    #   become: yes
-    
-    # - pause:
-    #     minutes: 2
-    
-    # - name: Install python-mysqldb
-    #   apt: name=python-mysqldb state=present
-    #   become: yes
-
-    # - name: Grant user access to mysql
-    #   shell: mysql -u root -e 'GRANT ALL ON *.* TO root;'
-
-    # - name: Run a iTrust build
-    #   shell: curl -v http://{{ JenkinsDns }}:8081/buildByToken/build?job=iTrust\&token=8fc61f12b36588bf13393a30a6af61e6
 
 ...
