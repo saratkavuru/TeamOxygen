@@ -31,7 +31,7 @@
 - [Kubernetes.yml](../Milestone4/kubernetes.yml) is an ansible playbook that sets up and configures the kubernetes cluster for Checkbox. It is also used to Kubernetes Dashboard.
 - The ansible-playbook [milestone.yml](../Milestone4/milestone.yml) is an outer level playbook which executes node.yml and JenkinsConfig.yml playbook and thus automating the entire Milestone 4 to a single step.
 - The node script [aws_terminate.js](../Milestone4/aws_terminate.js) is the chaos monkey script to randomly delete a master node of Kubernetes cluster.
-- The node script [aws_lb_terminate.js](../Milestone4/aws_terminate.js) is the chaos monkey script to delete the load balancer which enables the access to checkbox application.
+- The node script [aws_lb_terminate.js](../Milestone4/aws_lb_terminate.js) is the chaos monkey script to delete the load balancer which enables the access to checkbox application.
 
 ### High Availability
 
