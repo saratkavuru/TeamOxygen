@@ -43,4 +43,4 @@ Two chaos experiments have been performed in this milestone. First, a chaos monk
 
 ### Nodes Monitoring
 
-Since, the Kubernetes cluster is depoyed on various nodes the health of nodes need to monitored. To monitor the health of the nodes Kubernetes Dashboard has been deployed to monitor CPU and memory usage in real time.
+Since, the Kubernetes cluster is deployed on various nodes and the health of nodes need to monitored. To monitor the health of the nodes Kubernetes Dashboard has been deployed to monitor CPU and memory usage in real time.
