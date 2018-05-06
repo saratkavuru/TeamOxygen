@@ -1,4 +1,4 @@
-# Milestone 3 - Infrastructure and Deployment
+# Milestone 4 - Special Milestone
 
 ## Contribution:
 
@@ -8,7 +8,7 @@
 - Tanmay Goel (tgoel) : High Availability & Video Making
 
 ## Screencast
-[Screencast for Demo of  Infrastructure and Deployment Milestone](https://youtu.be/1iDUMS-HSj8)
+[Screencast for Demo of  Infrastructure and Deployment Milestone](https://youtu.be/ZvV_WB1IY7I)
 
 ## Report
 
@@ -35,12 +35,16 @@
 
 ### High Availability
 
-The implemention for Checkbox in Milestone 3 was in one availability zone. In this Milestone, Kubernetes instances are deployed and maintained on different availability zones. Also to attain high availability, more than one master nodes are maintained.
+The implemention for Checkbox in Milestone 3 was in one availability zone. In this Milestone, Kubernetes instances were deployed and maintained on different availability zones to offer protection against zonal outages. Earlier, we used a single master node. So to attain higher availability now, we've used more than one master node to protect the cluster against the single point of failure.
 
-### Chaos Experiment
+### Chaos Experiments
 
-Two chaos experiments have been performed in this milestone. First, a chaos monkey is written in Nodejs which radomly deletes a master node. Due to high availability, we find out that application is still up and running. Second, another chos monkey is build to delete the load balancer. In this monkey, the application fails and load balancer needs to created again.
+We've designed two chaos experiments for this milestone.
+First, a chaos monkey is written in Nodejs which radomly deletes a Kubernetes master node. Due to implementation of multiple master nodes in Kubernetees, we made sure that the application is still up and running.
+Second, another chaos monkey is designed to delete the load balancer. After executing this monkey, the application is not reachable and load balancer needs to created again manually.
 
 ### Nodes Monitoring
 
-Since, the Kubernetes cluster is deployed on various nodes and the health of nodes need to monitored. To monitor the health of the nodes Kubernetes Dashboard has been deployed to monitor CPU and memory usage in real time.
+Since the Kubernetes cluster is deployed on multiple nodes, the health of each node needs to be monitored. To monitor the health of each node, Kubernetes Dashboard has been deployed so that the CPU and memory usage in real time can be under constant surveillance.
+
+ ![alt text](../Milestone4/NodesMonitoring.png "Nodes Monitoring")
