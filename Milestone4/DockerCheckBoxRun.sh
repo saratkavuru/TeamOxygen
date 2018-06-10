@@ -1,0 +1,2 @@
+/redis-4.0.9/src/redis-server --slaveof redis 6379 --masterauth password &
+/etc/init.d/nginx start && cd checkbox.io/server-side/site && MONGO_USER=admin MONGO_PASSWORD=password MONGO_PORT=3002 MONGO_IP=mongo MAIL_USER=admin MAIL_PASSWORD=password MAIL_SMTP=smtp.gmail.com node server.js

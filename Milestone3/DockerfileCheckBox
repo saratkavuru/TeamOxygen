@@ -1,0 +1,29 @@
+# sudo docker build . -f DockerfileCheckBox -t some-content-nginx7
+# sudo docker tag some-content-nginx7 agoel5/some-content-nginx7
+# sudo docker push agoel5/some-content-nginx7
+# sudo docker run --name some-content-nginx7 -d some-content-nginx7
+# sudo docker top some-content-nginx7
+# sudo docker stop $(sudo docker ps -aq)
+# sudo docker rm $(sudo docker ps -aq)
+# sudo docker rmi $(sudo docker images -q)
+# sudo docker exec -it some-content-nginx7 /bin/bash
+FROM nginx
+RUN apt-get update
+RUN apt-get install -y git curl tar
+RUN git clone https://github.com/anshuman-goel/checkbox.io
+RUN mkdir /etc/nginx/sites-available
+COPY default /etc/nginx/sites-available/default
+RUN cp checkbox.io/local-conf/nginx.conf /etc/nginx/nginx.conf
+RUN apt-get install -my wget gnupg
+RUN curl -sL https://deb.nodesource.com/setup_9.x | bash
+RUN apt-get update
+RUN apt-get install --yes nodejs build-essential
+RUN cd checkbox.io/server-side/site && npm install
+RUN wget http://download.redis.io/releases/redis-4.0.9.tar.gz
+RUN tar xzf redis-4.0.9.tar.gz
+RUN cd redis-4.0.9 && make
+COPY redis.conf /etc/redis/redis.conf
+RUN chmod 777 /etc/redis/redis.conf
+COPY DockerCheckBoxRun.sh DockerCheckBoxRun.sh
+RUN chmod +x DockerCheckBoxRun.sh
+ENTRYPOINT sh DockerCheckBoxRun.sh

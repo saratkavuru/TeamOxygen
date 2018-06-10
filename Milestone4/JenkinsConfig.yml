@@ -1,0 +1,314 @@
+---
+# References:
+#
+# https://tecadmin.net/install-jenkins-in-ubuntu/
+# https://github.com/geerlingguy/ansible-role-jenkins/blob/master/handlers/main.yml
+# https://jjasghar.github.io/blog/2016/01/03/getting-jenkins-and-jenkins-job-builder-running/
+#
+# ansible-playbook --ask-vault-pass JenkinsConfig.yml -i inventory -vvv
+
+- hosts: Jenkins
+  
+  vars:
+    - jenkins_repo_url: deb https://pkg.jenkins.io/debian binary/
+    - jenkins_repo_key_url: https://pkg.jenkins.io/debian/jenkins.io.key
+    - jenkins_pkg_url: https://pkg.jenkins.io/debian/binary
+    - jenkins_init_file: /etc/default/jenkins
+    - jenkins_http_port_param: HTTP_PORT
+    - jenkins_java_options_env_var: JAVA_ARGS
+    - jenkins_version: 2.60
+    - jenkins_package_state: present
+    - jenkins_jar_location: /opt/jenkins-cli.jar
+    - jenkins_url_username: admin
+    - jenkins_url: http://{{ JenkinsDns }}:8081
+  
+  tasks:
+
+    - name: remove systemd
+      apt:
+        name: systemd
+        state: absent
+      become: yes
+
+    - name: Install add-apt-repostory
+      apt: name=software-properties-common state=latest
+      become: yes
+
+    - name: Add Oracle Java Repository
+      apt_repository: repo='ppa:webupd8team/java'
+      become: yes
+
+    - name: Accept Java 8 License
+      debconf: name='oracle-java8-installer' question='shared/accepted-oracle-license-v1-1' value='true' vtype='select'
+      become: yes
+
+    - name: install dependencies
+      apt:
+        pkg: "{{ item }}"
+        state: installed
+        update_cache: true
+        cache_valid_time: 500000
+      with_items:
+        - git
+        - oracle-java8-installer
+        - ca-certificates
+        - oracle-java8-set-default
+        - curl
+        - apt-transport-https
+        - python-pip
+        - maven
+      become: yes
+
+    - name: Add Jenkins apt repository key.
+      apt_key:
+        url: "{{ jenkins_repo_key_url }}"
+        state: present
+      become: yes
+
+    - name: Add Jenkins apt repository.
+      apt_repository:
+        repo: "{{ jenkins_repo_url }}"
+        state: present
+        update_cache: yes
+      when: jenkins_repo_url != ''
+      become: yes
+
+    - name: Download specific Jenkins version.
+      get_url:
+        url: "{{ jenkins_pkg_url }}/jenkins_{{ jenkins_version }}_all.deb"
+        dest: "/tmp/jenkins_{{ jenkins_version }}_all.deb"
+      when: jenkins_version is defined
+
+    - name: Check if we downloaded a specific version of Jenkins.
+      stat:
+        path: "/tmp/jenkins_{{ jenkins_version }}_all.deb"
+      register: specific_version
+      when: jenkins_version is defined
+
+    - name: Install our specific version of Jenkins.
+      apt:
+        deb: "/tmp/jenkins_{{ jenkins_version }}_all.deb"
+        state: installed
+      when: jenkins_version is defined and specific_version.stat.exists
+      become: yes
+
+    - name: Ensure Jenkins is installed.
+      apt:
+        name: jenkins
+        state: "{{ jenkins_package_state }}"
+
+    - name: install pip dependencies
+      pip:
+        name:
+          - jenkins-job-builder
+          - requests
+      become: yes
+
+    - name: upgrade requests
+      shell: |
+        sudo pip install --upgrade requests
+      become: yes
+    
+    - name: copy jenkins file
+      copy:
+        src: jenkins
+        dest: /etc/default/jenkins
+      become: yes
+
+    - name: Restart jenkins when user changes.
+      command: /etc/init.d/jenkins restart
+      become: yes
+        
+    - name: Add nodesource apt key
+      shell: curl -s https://deb.nodesource.com/gpgkey/nodesource.gpg.key | apt-key add -
+      become: yes
+
+    - name: Install the nodejs LTS repos
+      apt_repository:
+        repo: deb https://deb.nodesource.com/node_9.x {{ ansible_distribution_release }} main
+        state: present
+        update_cache: yes
+      become: yes        
+
+    - name: Install nodejs and npm
+      apt:
+        pkg: "{{ item }}"
+        state: present
+        update_cache: true
+      with_items:
+       - nodejs
+      become: yes
+
+    - name: Add ansible repository
+      apt_repository:
+        repo: ppa:ansible/ansible
+        update_cache: yes
+      become: yes
+
+    - name: Install ansible
+      apt:
+        name: ansible   
+        state: present 
+      become: yes        
+
+    - name: Include vars from the vault
+      include_vars:
+        file: creds.yml
+      no_log: true
+
+    - name: Export AWSAccessKeyId as env variable
+      shell: export AWSAccessKeyId="{{ AWSAccessKeyId }}"
+
+    - name: Export AWSSecretKey as env variable
+      shell: export AWSSecretKey="{{ AWSSecretKey }}" 
+    
+    - include_vars:
+        file: dns.yml
+
+    - name: Get the jenkins-cli jarfile from the Jenkins server.
+      get_url:
+        url: "http://{{ JenkinsDns }}:8081/jnlpJars/jenkins-cli.jar"
+        dest: "{{ jenkins_jar_location }}"
+      register: jarfile_get
+      until: "'OK' in jarfile_get.msg or 'file already exists' in jarfile_get.msg"
+      retries: 5
+      delay: 10
+      check_mode: no
+      become: yes
+    
+    - name: get admin password of jenkins
+      action: command cat /var/lib/jenkins/secrets/initialAdminPassword
+      register: out
+      changed_when: "'z' in out.stdout"
+      become: yes
+
+    - set_fact:
+        admin_password: "{{ out.stdout_lines[0] }}"
+
+    - name: copy jenkins config
+      copy:
+        src: ./config.xml
+        dest: /var/lib/jenkins/config.xml
+      become: yes
+
+    - name: create checkbox folder at root
+      file: 
+        path: /checkbox 
+        state: directory
+        owner: jenkins
+        group: jenkins
+        mode: 0777
+      become: yes
+
+    - name: copy DevOps.pem for checkbox
+      copy:
+        src: DevOps.pem
+        dest: /checkbox/DevOps.pem
+        owner: jenkins
+        group: jenkins
+        mode: 0400
+      become: yes
+
+    - name: Copy important files onto the Jenkins server for Checkbox
+      copy:
+        src: '{{ item }}'
+        dest: '/checkbox/{{ item }}'
+        owner: ubuntu
+        group: ubuntu        
+        mode: 0777
+      with_items:
+        - package.json
+        - aws.js
+        - Checkbox.yml
+        - checkboxvar.yml
+        - kubernetes.yml
+        - MongoDBDeploy.yml
+        - CheckboxDeploy.yml
+        - dashboard-admin.yml
+        - RedisMasterDeploy.yml
+        - creds.yml     
+
+    - name: Create empty inventory and dns.yml on Jenkins server for checkbox
+      copy:
+        content: ""
+        dest: '/checkbox/{{ item }}'
+        force: yes
+        owner: ubuntu
+        group: ubuntu
+        mode: 0777
+      with_items:
+        - inventory
+        - dns.yml    
+
+    - name: Create vault password file
+      copy:
+        content: "{{ vault_password }}"
+        dest: '/checkbox/{{ item }}'
+        force: yes
+        owner: ubuntu
+        group: ubuntu        
+        mode: 0444
+      with_items:
+        - vault_password_file.txt
+
+    - name: Install dependencies for aws.js for checkbox
+      shell: npm install
+      args:
+        chdir: /home/ubuntu   
+
+    - name: "Install Jenkins git and postbuild plugins"
+      jenkins_plugin: 
+        name: "{{ item }}"
+        url_username: "{{ jenkins_url_username }}"
+        url: "{{ jenkins_url }}"
+        url_password: "{{ admin_password }}"
+        validate_certs: no
+      with_items:
+        - git
+        - postbuild-task
+        - build-token-root
+        - credentials-binding
+        - envinject
+
+    - name: adding jenkins user to admin group
+      shell: |
+        usermod -aG sudo jenkins
+      become: yes
+
+    - name: copy sudoers
+      copy:
+        src: sudoers
+        dest: '/etc/sudoers'
+        force: yes
+      become: yes
+
+    - name: Restart jenkins when user changes.
+      command: /etc/init.d/jenkins restart
+      become: yes
+
+    - name: "Wait For Jenkins To Come Up"
+      uri:
+        url: "http://{{ JenkinsDns }}:8081/cli/"
+        status_code: 403
+      register: result
+      until: result.status == 403
+      retries: 10
+      delay: 5
+
+    - name: Copy checkbox build file to jenkins server
+      template:
+        src: CheckBoxBuild.yml
+        dest: /home/ubuntu/CheckBoxBuild.yml
+
+    - name: jenkins job builder configuration
+      action: template src="./jenkins_jobs.ini" dest="/home/ubuntu/jenkins_jobs.ini" owner=root group=root mode=0600
+      become: yes
+  
+    - name: Create checkbox job using jjb
+      command: jenkins-jobs --conf /home/ubuntu/jenkins_jobs.ini update /home/ubuntu/CheckBoxBuild.yml
+      become: yes
+
+    - name: Run a checkbox build
+      shell: curl -v http://{{ JenkinsDns }}:8081/buildByToken/build?job=checkbox\&token=8fc61f12b36588bf13393a30a6af61e6
+
+...

@@ -1,4 +1,4 @@
-*.log
+*.log*
 .vagrant
 */creds.yml
 */node_modules
@@ -9,4 +9,6 @@
 */package-lock.json
 */checkbox.io
 */TestGeneration
-*/coverage  
+*/coverage
+*/aws-k8s-kops-ansible
+Milestone3/DEmo

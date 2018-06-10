@@ -1,0 +1,41 @@
+#https://docs.openstack.org/infra/jenkins-job-builder/publishers.html#publishers.post-tasks
+
+- job:
+    name: checkbox
+    project-type: freestyle
+    description: 'checkbox.io'
+    retry-count: 3
+    auth-token: 8fc61f12b36588bf13393a30a6af61e6
+    scm:
+      - git:
+          url: 'https://github.com/chrisparnin/checkbox.io'
+          name: 'checkbox'
+          branches:
+            - '*/master'
+    builders:
+        - shell: |
+            cd server-side/site
+            npm install
+    publishers:
+        - post-tasks:
+            - matches:
+                - log-text:
+                  operator: AND
+              escalate-status: false
+              run-if-job-successful: true
+              script: |
+                git checkout master
+                git init --bare production
+                echo "#!/bin/sh" >> ./production/hooks/post-receive
+                echo "GIT_WORK_TREE=/var/lib/jenkins/jobs/checkbox/workspace/production-www/ git checkout -f" >> ./production/hooks/post-receive
+                echo "export AWSAccessKeyId={{ AWSAccessKeyId }}" >> ./production/hooks/post-receive
+                echo "export AWSSecretKey={{ AWSSecretKey }}" >> ./production/hooks/post-receive
+                echo "cd /checkbox" >> ./production/hooks/post-receive
+                echo "echo '' > inventory" >> ./production/hooks/post-receive
+                echo "echo '' > dns.yml" >> ./production/hooks/post-receive
+                echo "ansible-playbook kubernetes.yml -i inventory -vvv --vault-password-file /checkbox/vault_password_file.txt" >> ./production/hooks/post-receive
+                chmod 777 ./production/hooks/post-receive
+                mkdir production-www
+                git remote add production file:///var/lib/jenkins/jobs/checkbox/workspace/production
+                git checkout master 
+                cd ./examples && touch sample && git add sample && git commit -m "sample added" && git push production master

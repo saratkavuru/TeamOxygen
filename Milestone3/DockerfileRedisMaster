@@ -1,0 +1,9 @@
+# sudo docker build . -f DockerfileRedisMaster -t redismaster
+# sudo docker tag redismaster agoel5/redismaster
+# sudo docker push agoel5/redismaster
+# sudo docker run --name redismaster -d redismaster
+# sudo docker top redismaster
+# sudo docker exec -it redismaster /bin/bash
+FROM bitnami/redis
+ENV REDIS_REPLICATION_MODE=master
+ENV REDIS_PASSWORD=password
